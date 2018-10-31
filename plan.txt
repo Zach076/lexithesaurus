@@ -1,0 +1,9 @@
+﻿1. Our task is to create a word guessing game to be played with 2 players over a server. The game consists of three to five rounds with an arbitrary number of turns(turns continue until a player makes a mistake). During a players turn the server will send the client application the set of letters they need to make words from. They have a set amount of time to submit a real word consisting of letters from the board. Players get points when the other player makes a mistake, to win they must be the first to get three points.
+
+2. We think it will be difficult to get started on this project and organize an abstract plan of how to implement the project.We also expect the handling of two players per game to be the most challenging part of the game logic. Also we have never used a Trie before and have no idea how to handle it.
+
+3. We plan to use the Man pages via our terminal, lecture materials and the book, as well as asking other classmates or Dr. Tsikerdekis when we get really stuck.
+
+4. We plan to use the one in the C algorithms library --> http://fragglet.github.io/c-algorithms/
+
+5. We plan on meeting Monday,Wednesday and Friday from 1-2 PM as well as a set of 2-3 hours on Thursdays and Weekends for 2-3 hours or more depending on our current progress.
