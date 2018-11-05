@@ -9,6 +9,7 @@
  #include <stdlib.h>
  #include <string.h>
  #include <unistd.h>
+ #include "trie.h"
 
 
 #define QLEN 6 /* size of request queue */
@@ -111,6 +112,8 @@ int check_guess(char guess, char* board, const char*  word) {
      send(c_sd,boardbuffer,(size_t)wordlength,0);
  }
  */
+
+//static Trie* dictionary = trie_new();
 
 
 int main(int argc, char **argv) {
