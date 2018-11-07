@@ -14,6 +14,7 @@
 
 #define QLEN 6 /* size of request queue */
  int visits = 0; /* counts client connections */
+ Trie* dictionary;
 
  /*------------------------------------------------------------------------
  *  Program: demo_server
@@ -113,8 +114,24 @@ int check_guess(char guess, char* board, const char*  word) {
  }
  */
 
-//static Trie* dictionary = trie_new();
+void populateTrie(char* dictionaryPath) {
+  FILE *fp;
+  char fileBuffer[1000];
+  memset(fileBuffer,0,sizeOf(fileBuffer));
+  int secretVal = 1;
+  int* value = &secretVal;
 
+  fp = fopen(dictionaryPath, "r");
+  while(fgets(fileBuffer,1000,(FILE*)fp)) {
+    if(!trie_insert(dictionary, fileBuffer, (TrieValue)value)) {
+      fprintf(stderr,"trie_insert didn't insert correctly \n");
+    }
+    fprintf(stderr,"%s \n",fileBuffer);
+    fprintf(stderr,"%d \n",*(int*)trie_lookup(dictionary, fileBuffer));
+  }
+}
+
+#define DICTIONARYPATH "./twl06.txt"
 
 int main(int argc, char **argv) {
   struct protoent *ptrp; /* pointer to a protocol table entry */
@@ -127,6 +144,8 @@ int main(int argc, char **argv) {
   int optval = 1; /* boolean value when we set socket option */
   char buf[1000]; /* buffer for string the server sends */
   port = atoi(argv[1]); /* convert argument to binary */
+
+  dictionary = trie_new();
 
 
   if( argc != 4 ) {
@@ -210,6 +229,7 @@ int main(int argc, char **argv) {
     else if (pid == 0) {
 
       //play Lexithesaurus
+      populateTrie(DICTIONARYPATH);
       //play_game(sd2,sd3);
 
       //at end of game close the socket and exit
