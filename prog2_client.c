@@ -117,7 +117,9 @@ int main( int argc, char **argv) {
   char *host; /* pointer to host name */
   int n; /* number of characters read */
   char buf[1000]; /* buffer for data from the server */
-
+  uint8_t board_size;
+  uint8_t turn_time;
+  char playerNum;
   memset((char *)&sad,0,sizeof(sad)); /* clear sockaddr structure */
   sad.sin_family = AF_INET; /* set family to Internet */
 
@@ -166,11 +168,30 @@ int main( int argc, char **argv) {
     exit(EXIT_FAILURE);
   }
 
-  n = recv(sd, buf, sizeof(buf), 0);
-  while (n > 0) {
-    write(1,buf,n);
-    n = recv(sd, buf, sizeof(buf), 0);
+  n = read(sd,&playerNum,sizeof(playerNum));
+  if(n != sizeof(playerNum)){
+    perror("Read Error: playerNum not read properly");
+    exit(EXIT_FAILURE);
   }
+  if(playerNum == '1') {
+    fprintf(stderr,"You are Player 1... the game will begin when Player 2 joins...\n");
+  } else {
+    fprintf(stderr,"You are Player 2... \n");
+  }
+
+  n = read(sd,&board_size,sizeof(board_size));
+  if(n != sizeof(board_size)){
+    perror("Read Error: board_size not read properly");
+    exit(EXIT_FAILURE);
+  }
+  fprintf(stderr,"Board size : %d \n",board_size);
+
+  n = read(sd,&turn_time,sizeof(turn_time));
+  if(n != sizeof(turn_time)){
+    perror("Read Error: turn_time not read properly");
+    exit(EXIT_FAILURE);
+  }
+  fprintf(stderr,"Seconds per turn : %d \n",turn_time);
 
   /* Game Logic function */
   //play_game(sd);

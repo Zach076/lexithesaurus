@@ -4,6 +4,7 @@
  */
 
  //TODO: ALTER CODE FROM FIRST PROJECT
+ #include <time.h>
  #include <netdb.h>
  #include <stdio.h>
  #include <stdlib.h>
@@ -11,7 +12,7 @@
  #include <unistd.h>
  #include "trie.h"
 
-
+#define MAXWORDSIZE = 255;
 #define QLEN 6 /* size of request queue */
  int visits = 0; /* counts client connections */
  Trie* dictionary;
@@ -114,6 +115,67 @@ int check_guess(char guess, char* board, const char*  word) {
  }
  */
 
+char* makeBoard(uint8_t board_size) {
+  char board[board_size];
+  char vowels[5] = {'a','e','i','o','u'};
+  char randChar;
+  int vowel = 0;
+  srand(time(NULL));
+  for (int i = 0; i < board_size; i++) {
+
+    if(i != board_size-1 || vowel)
+    randChar = (rand() %(122-97+1))+97;
+    else
+    randChar = vowels[rand()%(5-0+1)];
+
+    if(randChar == 'a' || randChar == 'e' || randChar == 'i' || randChar == 'o' || randChar == 'u')
+    vowel = 1;
+
+    board[i] = randChar;
+
+    fprintf(stderr, "%c", board[i]);
+  }
+}
+
+void play_game(uint8_t board_size, uint8_t turn_time, int sd2, int sd3) {
+
+  char* board = makeBoard(board_size);
+  char yourTurn = 'Y';
+  char notYourTurn = 'N';
+  char boardbuffer[MAXWORDSIZE+1];
+  char guess; //guess recieved from server
+  int isCorrect = 0; //flag for if the guess is correct
+  int i; //used in for loop
+
+  while(1) {
+    //TODO
+    send(sd2,&yourTurn,sizeof(yourTurn),0);
+    send(sd3,&notYourTurn,sizeof(notYourTurn),0);
+
+      //prepare to send the board
+      sprintf(boardbuffer,"%s",displayword);
+      send(c_sd,boardbuffer,(size_t)wordlength,0);
+
+      //recieve the guess
+      recv(c_sd,&guess,1,0);
+
+      //checking guess and updating the board, if wrong, decrement guesses left
+      // if guess is correct, check if won
+      isCorrect = check_guess(guess,displayword,word);
+      if(!isCorrect) {
+          numguesses--;
+      } else if (isWon(displayword)) {
+          numguesses = 255;
+          send(c_sd,&numguesses,sizeof(numguesses),0);
+          sprintf(boardbuffer,"%s",displayword);
+          send(c_sd,boardbuffer,(size_t)wordlength,0);
+      }
+  }
+  send(c_sd,&numguesses,sizeof(numguesses),0);
+  sprintf(boardbuffer,"%s",displayword);
+  send(c_sd,boardbuffer,(size_t)wordlength,0);
+}
+
 void populateTrie(char* dictionaryPath) {
   FILE *fp;
   char fileBuffer[1000];
@@ -126,8 +188,6 @@ void populateTrie(char* dictionaryPath) {
     if(!trie_insert(dictionary, fileBuffer, (TrieValue)value)) {
       fprintf(stderr,"trie_insert didn't insert correctly \n");
     }
-    //fprintf(stderr,"%s \n",fileBuffer);
-    //fprintf(stderr,"%d \n",*(int*)trie_lookup(dictionary, fileBuffer));
   }
 }
 
@@ -143,6 +203,12 @@ int main(int argc, char **argv) {
   int alen; /* length of address */
   int optval = 1; /* boolean value when we set socket option */
   char buf[1000]; /* buffer for string the server sends */
+  char player1 = '1';
+  char player2 = '2';
+  uint8_t board_size;
+  uint8_t turn_time;
+  //TODO
+  //char* dictionary_path;
   port = atoi(argv[1]); /* convert argument to binary */
 
   dictionary = trie_new();
@@ -154,6 +220,11 @@ int main(int argc, char **argv) {
     fprintf(stderr,"./prog2_server server_port board_size seconds_per_round dictionary_path\n");
     exit(EXIT_FAILURE);
   }
+
+  board_size = atoi(argv[2]);
+  turn_time = atoi(argv[3]);
+  //TODO
+  //dictionary_path = argv[4];
 
   memset((char *)&sad,0,sizeof(sad)); /* clear sockaddr structure */
 
@@ -208,6 +279,9 @@ int main(int argc, char **argv) {
   }
      pid_t pid; //process id of the child processes.
   /* Main server loop - accept and handle requests */
+
+  populateTrie(DICTIONARYPATH);
+
   while (1) {
     alen = sizeof(cad);
     if ((sd2 = accept(sd, (struct sockaddr *)&cad, (socklen_t*)&alen)) < 0) {
@@ -215,10 +289,18 @@ int main(int argc, char **argv) {
       exit(EXIT_FAILURE);
     }
 
+    send(sd2,&player1,sizeof(player1),0);
+    send(sd2,&board_size,sizeof(board_size),0);
+    send(sd2,&turn_time,sizeof(turn_time),0);
+
     if ((sd3 = accept(sd, (struct sockaddr *)&cad, (socklen_t*)&alen)) < 0) {
       fprintf(stderr, "Error: Accept failed\n");
       exit(EXIT_FAILURE);
     }
+
+    send(sd3,&player2,sizeof(player2),0);
+    send(sd3,&board_size,sizeof(board_size),0);
+    send(sd3,&turn_time,sizeof(turn_time),0);
 
     // fork here and implement logic
     pid = fork();
@@ -229,9 +311,7 @@ int main(int argc, char **argv) {
     else if (pid == 0) {
 
       //play Lexithesaurus
-      fprintf(stderr,"start populateTrie \n");
-      populateTrie(DICTIONARYPATH);
-      //play_game(sd2,sd3);
+      play_game(board_size, turn_time,sd2,sd3);
 
       //at end of game close the socket and exit
       close(sd2);
