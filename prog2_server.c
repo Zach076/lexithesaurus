@@ -126,8 +126,8 @@ void populateTrie(char* dictionaryPath) {
     if(!trie_insert(dictionary, fileBuffer, (TrieValue)value)) {
       fprintf(stderr,"trie_insert didn't insert correctly \n");
     }
-    fprintf(stderr,"%s \n",fileBuffer);
-    fprintf(stderr,"%d \n",*(int*)trie_lookup(dictionary, fileBuffer));
+    //fprintf(stderr,"%s \n",fileBuffer);
+    //fprintf(stderr,"%d \n",*(int*)trie_lookup(dictionary, fileBuffer));
   }
 }
 
@@ -229,6 +229,7 @@ int main(int argc, char **argv) {
     else if (pid == 0) {
 
       //play Lexithesaurus
+      fprintf(stderr,"start populateTrie \n");
       populateTrie(DICTIONARYPATH);
       //play_game(sd2,sd3);
 
