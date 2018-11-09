@@ -12,7 +12,7 @@
  #include <unistd.h>
  #include "trie.h"
 
-#define MAXWORDSIZE = 255;
+#define MAXWORDSIZE 255
 #define QLEN 6 /* size of request queue */
  int visits = 0; /* counts client connections */
  Trie* dictionary;
@@ -115,11 +115,11 @@ int check_guess(char guess, char* board, const char*  word) {
  }
  */
 
-char* makeBoard(uint8_t board_size) {
-  char board[board_size];
+void makeBoard(char* board, uint8_t board_size) {
   char vowels[5] = {'a','e','i','o','u'};
   char randChar;
   int vowel = 0;
+
   srand(time(NULL));
   for (int i = 0; i < board_size; i++) {
 
@@ -132,26 +132,47 @@ char* makeBoard(uint8_t board_size) {
     vowel = 1;
 
     board[i] = randChar;
-
+    //TODO remove printing
     fprintf(stderr, "%c", board[i]);
   }
 }
 
 void play_game(uint8_t board_size, uint8_t turn_time, int sd2, int sd3) {
 
-  char* board = makeBoard(board_size);
+  char board[board_size+1];
   char yourTurn = 'Y';
   char notYourTurn = 'N';
   char boardbuffer[MAXWORDSIZE+1];
   char guess; //guess recieved from server
   int isCorrect = 0; //flag for if the guess is correct
   int i; //used in for loop
+  uint8_t roundNum = 0;
+  uint8_t player1Score = 0;
+  uint8_t player2Score = 0;
 
-  while(1) {
+  memset(board,0,sizeof(board));
+
+  //while(1) {
     //TODO
+    ++roundNum;
+    //R.1
+    send(sd2,&player1Score,sizeof(player1Score),0);
+    send(sd3,&player1Score,sizeof(player1Score),0);
+    send(sd2,&player2Score,sizeof(player2Score),0);
+    send(sd3,&player2Score,sizeof(player2Score),0);
+    //R.2
+    send(sd2,&roundNum,sizeof(roundNum),0);
+    send(sd3,&roundNum,sizeof(roundNum),0);
+    //R.3
+    makeBoard(board, board_size);
+    //R.4
+    send(sd2,&board,(size_t)board_size,0);
+    send(sd3,&board,(size_t)board_size,0);
+    
+    //R.5+R.6
     send(sd2,&yourTurn,sizeof(yourTurn),0);
     send(sd3,&notYourTurn,sizeof(notYourTurn),0);
-
+    /*
       //prepare to send the board
       sprintf(boardbuffer,"%s",displayword);
       send(c_sd,boardbuffer,(size_t)wordlength,0);
@@ -174,6 +195,7 @@ void play_game(uint8_t board_size, uint8_t turn_time, int sd2, int sd3) {
   send(c_sd,&numguesses,sizeof(numguesses),0);
   sprintf(boardbuffer,"%s",displayword);
   send(c_sd,boardbuffer,(size_t)wordlength,0);
+  */
 }
 
 void populateTrie(char* dictionaryPath) {
