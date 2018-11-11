@@ -13,6 +13,7 @@
  #include "trie.h"
 
 #define MAXWORDSIZE 255
+#define DICTIONARYPATH "twl06.txt"
 #define QLEN 6 /* size of request queue */
 #define TRUE 1
 #define FALSE 0
@@ -100,13 +101,13 @@ void turn_handler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
        // recieve players guess
        n = recv(ap,&wordlength,sizeof(wordlength),0);
        if(n != sizeof(wordlength)){
-           fprintf(stderr,"recv error: wordlength not read properly");
+           fprintf(stderr,"recv error: wordlength not read properly\n");
            exit(EXIT_FAILURE);
        }
 
         n = recv(ap,guessbuffer,wordlength,0);
         if(n != wordlength){
-            fprintf(stderr,"recv error: word not read properly");
+            fprintf(stderr,"recv error: word not read properly\n");
             exit(EXIT_FAILURE);
         }
 
@@ -220,7 +221,6 @@ void play_game(uint8_t board_size, uint8_t turn_time, int sd2, int sd3) {
 
 }
 
-
 void populateTrie(char* dictionaryPath) {
   FILE *fp;
   char fileBuffer[1000];
@@ -235,8 +235,6 @@ void populateTrie(char* dictionaryPath) {
     }
   }
 }
-
-#define DICTIONARYPATH "twl06.txt"
 
 int main(int argc, char **argv) {
   struct protoent *ptrp; /* pointer to a protocol table entry */

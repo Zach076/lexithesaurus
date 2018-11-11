@@ -39,8 +39,8 @@ void turn_handler(int sd) {
     memset(guess,0,sizeof(guess));
 
     n = recv(sd, &turnFlag, sizeof(turnFlag), 0);
-    if (n != turnFlag) {
-        fprintf(stderr,"Read Error: Turn flag not read properly");
+    if (n != sizeof(turnFlag)) {
+        fprintf(stderr,"Read Error: Turn flag not read properly\n");
         exit(EXIT_FAILURE);
     }
 
@@ -57,10 +57,10 @@ void turn_handler(int sd) {
         recv(sd,&isCorrect,sizeof(isCorrect),0);
 
         if(isCorrect == 1){
-            printf("\nValid word!\n");
+            printf("Valid word!\n");
         }
         else{
-            printf("\nInvalid word!\n");
+            printf("Invalid word!\n");
         }
 
     }else {
@@ -107,31 +107,31 @@ void play_game(int sd, char playerNum, uint8_t board_size, uint8_t turn_time) {
       //R.1
       n = read(sd, &player1Score, sizeof(player1Score));
       if (n != sizeof(player1Score)) {
-          fprintf(stderr,"Read Error: Player1 Score not read properly");
+          fprintf(stderr,"Read Error: Player1 Score not read properly\n");
           exit(EXIT_FAILURE);
       }
 
       n = read(sd, &player2Score, sizeof(player2Score));
       if (n != sizeof(player2Score)) {
-          fprintf(stderr,"Read Error: Player2 Score not read properly");
+          fprintf(stderr,"Read Error: Player2 Score not read properly\n");
           exit(EXIT_FAILURE);
       }
 
       //R.2
       n = read(sd, &roundNum, sizeof(roundNum));
       if (n != sizeof(roundNum)) {
-          fprintf(stderr,"Read Error: Round number not read properly");
+          fprintf(stderr,"Read Error: Round number not read properly\n");
           exit(EXIT_FAILURE);
       }
 
       //R.4
       n = recv(sd, board, board_size, 0);
       if (n != board_size) {
-          fprintf(stderr,"Read Error: Board not read properly");
+          fprintf(stderr,"Read Error: Board not read properly\n");
           exit(EXIT_FAILURE);
       }
 
-      printf("Round %d... \n", roundNum);
+      printf("\nRound %d... \n", roundNum);
       if (playerNum == '1') {
           printf("Score is %d-%d\n", player1Score, player2Score);
       } else {
