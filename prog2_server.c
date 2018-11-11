@@ -48,7 +48,7 @@ void makeBoard(char* board, uint8_t board_size) {
     if(i != board_size-1 || vowel)
     randChar = (rand() %(122-97+1))+97;
     else
-    randChar = vowels[rand()%(5-0+1)];
+    randChar = vowels[rand()%(4-0+1)];
 
     if(randChar == 'a' || randChar == 'e' || randChar == 'i' || randChar == 'o' || randChar == 'u')
     vowel = 1;
@@ -57,6 +57,7 @@ void makeBoard(char* board, uint8_t board_size) {
     //TODO remove printing
     fprintf(stderr, "%c", board[i]);
   }
+  fprintf(stderr, "\n");
 }
 
 int check_guess(char* guess,char* board){
