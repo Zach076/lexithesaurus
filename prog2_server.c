@@ -14,6 +14,8 @@
 
 #define MAXWORDSIZE 255
 #define QLEN 6 /* size of request queue */
+#define TRUE 1
+#define FALSE 0
  int visits = 0; /* counts client connections */
  Trie* dictionary;
 
@@ -137,16 +139,59 @@ void makeBoard(char* board, uint8_t board_size) {
   }
 }
 
+void turn_handler(int ap,int iap,char* board,uint8_t *ascore,uint8_t* iaScore){
+    char yourTurn = 'Y';
+    char notYourTurn = 'N';
+    int isRoundOver = FALSE;
+    ssize_t n;
+    uint8_t wordlength;
+    char guessbuffer[MAXWORDSIZE];
+    Trie* guessedWords = trie_new();
+
+    memset(guessbuffer,0,sizeof(guessbuffer));
+    //T.1
+    send(ap,&yourTurn,sizeof(yourTurn),0);
+    send(iap,&notYourTurn,sizeof(notYourTurn),0);
+
+    while(!isRoundOver){
+       //TODO: set flag for timeouts
+       // recieve players guess
+       n = recv(ap,&wordlength,sizeof(wordlength),0);
+       if(n != sizeof(wordlength)){
+           perror("recv error: wordlength not read properly");
+       }
+
+        n = recv(ap,guessbuffer,wordlength,0);
+        if(n != wordlength){
+            perror("recv error: word not read properly");
+        }
+
+        if(trie_lookup(guessedWords, guessbuffer) == TRIE_NULL){
+            trie_insert(guessedWords,guessbuffer,(TrieValue)1);
+
+        }
+
+
+
+
+    }
+
+
+
+
+
+
+}
+
 void play_game(uint8_t board_size, uint8_t turn_time, int sd2, int sd3) {
 
   char board[board_size+1];
-  char yourTurn = 'Y';
-  char notYourTurn = 'N';
+
   char boardbuffer[MAXWORDSIZE+1];
   char guess; //guess recieved from server
   int isCorrect = 0; //flag for if the guess is correct
   int i; //used in for loop
-  uint8_t roundNum = 0;
+  uint8_t roundNum = 1;
   uint8_t player1Score = 0;
   uint8_t player2Score = 0;
 
@@ -154,7 +199,7 @@ void play_game(uint8_t board_size, uint8_t turn_time, int sd2, int sd3) {
 
   //while(1) {
     //TODO
-    ++roundNum;
+    //++roundNum;
     //R.1
     send(sd2,&player1Score,sizeof(player1Score),0);
     send(sd3,&player1Score,sizeof(player1Score),0);
@@ -169,9 +214,22 @@ void play_game(uint8_t board_size, uint8_t turn_time, int sd2, int sd3) {
     send(sd2,&board,(size_t)board_size,0);
     send(sd3,&board,(size_t)board_size,0);
     
-    //R.5+R.6
-    send(sd2,&yourTurn,sizeof(yourTurn),0);
-    send(sd3,&notYourTurn,sizeof(notYourTurn),0);
+    //R.5+R.6/ T.1
+
+
+    if(roundNum%2 == 0){
+        turn_handler(sd3,sd2, board, &player2Score, &player1Score);
+    }
+    else{
+        turn_handler(sd2,sd3, board, &player1Score, &player2Score);
+    }
+
+    roundNum++;
+
+
+
+
+
     /*
       //prepare to send the board
       sprintf(boardbuffer,"%s",displayword);
@@ -213,7 +271,7 @@ void populateTrie(char* dictionaryPath) {
   }
 }
 
-#define DICTIONARYPATH "./twl06.txt"
+#define DICTIONARYPATH "twl06.txt"
 
 int main(int argc, char **argv) {
   struct protoent *ptrp; /* pointer to a protocol table entry */
