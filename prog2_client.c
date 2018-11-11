@@ -29,84 +29,6 @@
 *------------------------------------------------------------------------
 */
 
-/*
-#define MAXWORDSIZE 254
-
-char display_board(uint8_t guesses, char* board){
-  char guess=0;
-  printf("\nBoard: %s (%d guesses left) \n", board, guesses);
-  printf("Enter guess: ");
-  scanf("%c",&guess);
-  if(guess == '\n'){
-    scanf("%c",&guess);
-  }
-  return guess;
-}
-*/
-
-/*main game loop for clients*/
-/*
-void play_game(int sd) {
-  char guess;
-  uint8_t numguesses=0;
-  int wordlength;
-  ssize_t n;
-
-  //create a word buffer with size numguesses+1 to store the word + a null terminator
-  char wordbuf[MAXWORDSIZE+1];
-  memset(wordbuf,0,sizeof(wordbuf)); //this essentially adds the null  terminator to the board for us.
-
-  //read the number of guesses
-  n = read(sd,&numguesses,sizeof(numguesses));
-  if(n != sizeof(numguesses)){
-    perror("Read Error: numguesses not read properly");
-    exit(EXIT_FAILURE);
-  }
-
-  wordlength = numguesses;
-
-  //read the board, wait for all characters of the secret word
-  n = recv(sd,wordbuf,numguesses,0);
-  if(n != wordlength){
-    perror("Recv Error: board not read properly");
-    exit(EXIT_FAILURE);
-  }
-
-  //while client still has guesses left
-  while (numguesses > 0){
-    if(numguesses == 255) {
-      //print board, you win, close socket, and exit
-      printf("\nBoard: %s\n",wordbuf);
-      printf("You win\n");
-      close(sd);
-      exit(EXIT_SUCCESS);
-    }
-
-    guess = display_board(numguesses,wordbuf);
-    //send the character guess to the server
-    send(sd,&guess,1,0);
-    //get server response
-    memset(wordbuf,0,sizeof(wordbuf));
-    n = read(sd,&numguesses,sizeof(numguesses));
-    if(n != sizeof(numguesses)){
-      perror("Read Error: numguesses not read properly");
-      exit(EXIT_FAILURE);
-    }
-    n = recv(sd,wordbuf,wordlength,0);
-    if(n != wordlength){
-      perror("Recv Error: board not read properly");
-      exit(EXIT_FAILURE);
-    }
-  }
-
-  //print board, you lose, close socket, and exit
-  printf("Board: %s\n",wordbuf);
-  printf("You lost\n");
-  close(sd);
-  exit(EXIT_SUCCESS);
-}
-*/
-
 void turn_handler(int sd) {
     char turnFlag;
     ssize_t n;
@@ -116,9 +38,9 @@ void turn_handler(int sd) {
 
     memset(guess,0,sizeof(guess));
 
-    n = recv(sd, turnFlag, sizeof(turnFlag), 0);
+    n = recv(sd, &turnFlag, sizeof(turnFlag), 0);
     if (n != turnFlag) {
-        perror("Read Error: Turn flag not read properly");
+        fprintf(stderr,"Read Error: Turn flag not read properly");
         exit(EXIT_FAILURE);
     }
 
@@ -150,13 +72,13 @@ void turn_handler(int sd) {
         if(isCorrect == 1){
             n = recv(sd, &guessSize, sizeof(guessSize), 0);
             if (n != guessSize) {
-                perror("Read Error: Guess size not read properly");
+                fprintf(stderr,"Read Error: Guess size not read properly");
                 exit(EXIT_FAILURE);
             }
 
             n = recv(sd, guess, guessSize, 0);
             if (n != guessSize) {
-                perror("Read Error: Guess not read properly");
+                fprintf(stderr,"Read Error: Guess not read properly");
                 exit(EXIT_FAILURE);
             }
 
@@ -185,27 +107,27 @@ void play_game(int sd, char playerNum, uint8_t board_size, uint8_t turn_time) {
       //R.1
       n = read(sd, &player1Score, sizeof(player1Score));
       if (n != sizeof(player1Score)) {
-          perror("Read Error: Player1 Score not read properly");
+          fprintf(stderr,"Read Error: Player1 Score not read properly");
           exit(EXIT_FAILURE);
       }
 
       n = read(sd, &player2Score, sizeof(player2Score));
       if (n != sizeof(player2Score)) {
-          perror("Read Error: Player2 Score not read properly");
+          fprintf(stderr,"Read Error: Player2 Score not read properly");
           exit(EXIT_FAILURE);
       }
 
       //R.2
       n = read(sd, &roundNum, sizeof(roundNum));
       if (n != sizeof(roundNum)) {
-          perror("Read Error: Round number not read properly");
+          fprintf(stderr,"Read Error: Round number not read properly");
           exit(EXIT_FAILURE);
       }
 
       //R.4
       n = recv(sd, board, board_size, 0);
       if (n != board_size) {
-          perror("Read Error: Board not read properly");
+          fprintf(stderr,"Read Error: Board not read properly");
           exit(EXIT_FAILURE);
       }
 
@@ -226,56 +148,6 @@ void play_game(int sd, char playerNum, uint8_t board_size, uint8_t turn_time) {
 
   }
 
-/*
-  //read the number of guesses
-  n = read(sd,&numguesses,sizeof(numguesses));
-  if(n != sizeof(numguesses)){
-    perror("Read Error: numguesses not read properly");
-    exit(EXIT_FAILURE);
-  }
-
-  wordlength = numguesses;
-
-  //read the board, wait for all characters of the secret word
-  n = recv(sd,wordbuf,numguesses,0);
-  if(n != wordlength){
-    perror("Recv Error: board not read properly");
-    exit(EXIT_FAILURE);
-  }
-
-  //while client still has guesses left
-  while (numguesses > 0){
-    if(numguesses == 255) {
-      //print board, you win, close socket, and exit
-      printf("\nBoard: %s\n",wordbuf);
-      printf("You win\n");
-      close(sd);
-      exit(EXIT_SUCCESS);
-    }
-
-    guess = display_board(numguesses,wordbuf);
-    //send the character guess to the server
-    send(sd,&guess,1,0);
-    //get server response
-    memset(wordbuf,0,sizeof(wordbuf));
-    n = read(sd,&numguesses,sizeof(numguesses));
-    if(n != sizeof(numguesses)){
-      perror("Read Error: numguesses not read properly");
-      exit(EXIT_FAILURE);
-    }
-    n = recv(sd,wordbuf,wordlength,0);
-    if(n != wordlength){
-      perror("Recv Error: board not read properly");
-      exit(EXIT_FAILURE);
-    }
-  }
-
-  //print board, you lose, close socket, and exit
-  printf("Board: %s\n",wordbuf);
-  printf("You lost\n");
-  close(sd);
-  exit(EXIT_SUCCESS);
-  */
 }
 
 //main function, mostly connection logic
@@ -341,7 +213,7 @@ int main( int argc, char **argv) {
 
   n = read(sd,&playerNum,sizeof(playerNum));
   if(n != sizeof(playerNum)){
-    perror("Read Error: playerNum not read properly");
+    fprintf(stderr,"Read Error: playerNum not read properly");
     exit(EXIT_FAILURE);
   }
   if(playerNum == '1') {
@@ -352,14 +224,14 @@ int main( int argc, char **argv) {
 
   n = read(sd,&board_size,sizeof(board_size));
   if(n != sizeof(board_size)){
-    perror("Read Error: board_size not read properly");
+    fprintf(stderr,"Read Error: board_size not read properly");
     exit(EXIT_FAILURE);
   }
   fprintf(stderr,"Board size : %d \n",board_size);
 
   n = read(sd,&turn_time,sizeof(turn_time));
   if(n != sizeof(turn_time)){
-    perror("Read Error: turn_time not read properly");
+    fprintf(stderr,"Read Error: turn_time not read properly");
     exit(EXIT_FAILURE);
   }
   fprintf(stderr,"Seconds per turn : %d \n",turn_time);

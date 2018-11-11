@@ -35,87 +35,6 @@
  *------------------------------------------------------------------------
  */
 
-/*
-#define MAXWORDSIZE 254
-
-//simple check if client has won
-int isWon(char* board) {
-  int i = 0;
-    for(i = 0; i < strlen(board); i++) {
-        if(board[i] == '_') {
-            return 0;
-        }
-    }
-    return 1;
-}
-
-//check if guess has been guessed or if it isnt in the word
-int check_guess(char guess, char* board, const char*  word) {
-    int guessed = 0;
-    int i = 0;
-    for(i = 0; i < strlen(board);i++) {
-        if (guess == (board[i])) {
-            guessed = -1;
-        } else if(guess == word[i] && guessed == 0) {
-            guessed = 1;
-            board[i] = word[i];
-        }
-    }
-    if(guessed == -1) {
-      guessed = 0;
-    }
-    return guessed;
-}
-
- /*main game loop for server*/
- /*
- void play_game(char* word,int c_sd){
-     //max word size is 254 so indecies should be 0-253
-     char boardbuffer[MAXWORDSIZE+1];
-     int wordlength = (int)strlen(word);
-     //the number of guesses based on the length of the word
-     uint8_t numguesses = (uint8_t)wordlength;
-     //used to "hide" the word -> using _ instead of the characters
-     char* displayword = (char*) malloc((strlen(word)+1) * sizeof(char));
-     char guess; //guess recieved from server
-     int isCorrect = 0; //flag for if the guess is correct
-     int i; //used in for loop
-
-     //initialize empty board and fill with '_'
-     memset(boardbuffer,0,sizeof(boardbuffer));
-     for (i = 0; i < wordlength; ++i) {
-         displayword[i] = '_';
-     }
-     //null terminate the board
-     displayword[wordlength] = 0;
-     while(numguesses > 0) {
-         //send N --> seems to work
-         send(c_sd,&numguesses,sizeof(numguesses),0);
-
-         //prepare to send the board
-         sprintf(boardbuffer,"%s",displayword);
-         send(c_sd,boardbuffer,(size_t)wordlength,0);
-
-         //recieve the guess
-         recv(c_sd,&guess,1,0);
-
-         //checking guess and updating the board, if wrong, decrement guesses left
-         // if guess is correct, check if won
-         isCorrect = check_guess(guess,displayword,word);
-         if(!isCorrect) {
-             numguesses--;
-         } else if (isWon(displayword)) {
-             numguesses = 255;
-             send(c_sd,&numguesses,sizeof(numguesses),0);
-             sprintf(boardbuffer,"%s",displayword);
-             send(c_sd,boardbuffer,(size_t)wordlength,0);
-         }
-     }
-     send(c_sd,&numguesses,sizeof(numguesses),0);
-     sprintf(boardbuffer,"%s",displayword);
-     send(c_sd,boardbuffer,(size_t)wordlength,0);
- }
- */
 
 void makeBoard(char* board, uint8_t board_size) {
   char vowels[5] = {'a','e','i','o','u'};
@@ -177,15 +96,18 @@ void turn_handler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
         send(ap,&yourTurn,sizeof(yourTurn),0);
         send(iap,&notYourTurn,sizeof(notYourTurn),0);
        //TODO: set flag for timeouts
+
        // recieve players guess
        n = recv(ap,&wordlength,sizeof(wordlength),0);
        if(n != sizeof(wordlength)){
-           perror("recv error: wordlength not read properly");
+           fprintf(stderr,"recv error: wordlength not read properly");
+           exit(EXIT_FAILURE);
        }
 
         n = recv(ap,guessbuffer,wordlength,0);
         if(n != wordlength){
-            perror("recv error: word not read properly");
+            fprintf(stderr,"recv error: word not read properly");
+            exit(EXIT_FAILURE);
         }
 
         if(trie_lookup(dictionary,guessbuffer) == TRIE_NULL){
