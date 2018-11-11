@@ -269,9 +269,7 @@ void play_game(uint8_t board_size, uint8_t turn_time, int sd2, int sd3) {
 
   memset(board,0,sizeof(board));
 
-  //while(1) {
-    //TODO
-    //++roundNum;
+  while(player1Score < 3 && player2Score < 3) {
     //R.1
     send(sd2,&player1Score,sizeof(player1Score),0);
     send(sd3,&player1Score,sizeof(player1Score),0);
@@ -285,10 +283,8 @@ void play_game(uint8_t board_size, uint8_t turn_time, int sd2, int sd3) {
     //R.4
     send(sd2,&board,(size_t)board_size,0);
     send(sd3,&board,(size_t)board_size,0);
-    
-    //R.5+R.6/ T.1
 
-
+    //R.5+R.6
     if(roundNum%2 == 0){
         turn_handler(sd3,sd2, board, &player2Score, &player1Score);
     }
@@ -296,37 +292,12 @@ void play_game(uint8_t board_size, uint8_t turn_time, int sd2, int sd3) {
         turn_handler(sd2,sd3, board, &player1Score, &player2Score);
     }
 
+    //increment round number
     roundNum++;
-
-
-
-
-
-    /*
-      //prepare to send the board
-      sprintf(boardbuffer,"%s",displayword);
-      send(c_sd,boardbuffer,(size_t)wordlength,0);
-
-      //recieve the guess
-      recv(c_sd,&guess,1,0);
-
-      //checking guess and updating the board, if wrong, decrement guesses left
-      // if guess is correct, check if won
-      isCorrect = check_guess(guess,displayword,word);
-      if(!isCorrect) {
-          numguesses--;
-      } else if (isWon(displayword)) {
-          numguesses = 255;
-          send(c_sd,&numguesses,sizeof(numguesses),0);
-          sprintf(boardbuffer,"%s",displayword);
-          send(c_sd,boardbuffer,(size_t)wordlength,0);
-      }
   }
-  send(c_sd,&numguesses,sizeof(numguesses),0);
-  sprintf(boardbuffer,"%s",displayword);
-  send(c_sd,boardbuffer,(size_t)wordlength,0);
-  */
+
 }
+
 
 void populateTrie(char* dictionaryPath) {
   FILE *fp;
