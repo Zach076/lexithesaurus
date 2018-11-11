@@ -139,7 +139,26 @@ void makeBoard(char* board, uint8_t board_size) {
   }
 }
 
-void turn_handler(int ap,int iap,char* board,uint8_t *ascore,uint8_t* iaScore){
+int check_guess(char* guess,char* board){
+    int letterCount[26];
+    int i;
+    int valid =TRUE;
+
+    for(i=0;i <strlen(board);i++){
+        letterCount[board[i] - 97]++;
+    }
+
+    for(i=0;i <strlen(guess);i++){
+        letterCount[guess[i]-97]--;
+        if(letterCount[guess[i]-97] ==-1){
+            valid = FALSE;
+        }
+    }
+    return valid;
+
+}
+
+void turn_handler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
     char yourTurn = 'Y';
     char notYourTurn = 'N';
     int isRoundOver = FALSE;
@@ -147,13 +166,16 @@ void turn_handler(int ap,int iap,char* board,uint8_t *ascore,uint8_t* iaScore){
     uint8_t wordlength;
     char guessbuffer[MAXWORDSIZE];
     Trie* guessedWords = trie_new();
+    uint8_t validguess = TRUE;
 
     memset(guessbuffer,0,sizeof(guessbuffer));
-    //T.1
-    send(ap,&yourTurn,sizeof(yourTurn),0);
-    send(iap,&notYourTurn,sizeof(notYourTurn),0);
+    int ap = p1;
+    int iap = p2;
 
     while(!isRoundOver){
+        //T.1
+        send(ap,&yourTurn,sizeof(yourTurn),0);
+        send(iap,&notYourTurn,sizeof(notYourTurn),0);
        //TODO: set flag for timeouts
        // recieve players guess
        n = recv(ap,&wordlength,sizeof(wordlength),0);
@@ -166,21 +188,71 @@ void turn_handler(int ap,int iap,char* board,uint8_t *ascore,uint8_t* iaScore){
             perror("recv error: word not read properly");
         }
 
-        if(trie_lookup(guessedWords, guessbuffer) == TRIE_NULL){
+        if(trie_lookup(dictionary,guessbuffer) == TRIE_NULL){
+            //not valid word
+            //round over logic
+            validguess = FALSE;
+            send(ap,&validguess,sizeof(validguess),0);
+            send(iap,&validguess,sizeof(validguess),0);
+
+            isRoundOver = TRUE;
+            if(ap == p1) {
+                (*p2Score)++;
+            } else {
+                (*p1Score)++;
+            }
+        }
+        // T.3.1 check if the word is in the trie already
+        else if(trie_lookup(guessedWords, guessbuffer) == TRIE_NULL){
             trie_insert(guessedWords,guessbuffer,(TrieValue)1);
 
+            if(check_guess(guessbuffer,board)){
+                //guess is valid
+                send(ap,&validguess,sizeof(validguess),0);
+                //send length to inactive player
+                send(iap,&wordlength,sizeof(wordlength),0);
+                //send the guessed word
+                send(iap,guessbuffer,sizeof(guessbuffer),0);
+            }
+
+            else{
+                //round over
+                validguess = FALSE;
+                send(ap,&validguess,sizeof(validguess),0);
+                send(iap,&validguess,sizeof(validguess),0);
+
+                isRoundOver = TRUE;
+                if(ap == p1) {
+                    (*p2Score)++;
+                } else {
+                    (*p1Score)++;
+                }
+            }
         }
 
+        else{
+            //round over
+            validguess = FALSE;
+            send(ap,&validguess,sizeof(validguess),0);
+            send(iap,&validguess,sizeof(validguess),0);
 
+            isRoundOver = TRUE;
+            if(ap == p1) {
+                (*p2Score)++;
+            } else {
+                (*p1Score)++;
+            }
+        }
 
-
+        //changing active player
+        if(ap == p1) {
+            ap = p2;
+            iap = p1;
+        } else {
+            ap = p1;
+            iap = p2;
+        }
     }
-
-
-
-
-
-
 }
 
 void play_game(uint8_t board_size, uint8_t turn_time, int sd2, int sd3) {

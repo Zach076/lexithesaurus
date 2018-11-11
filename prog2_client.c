@@ -153,6 +153,7 @@ void play_game(int sd, char playerNum, uint8_t board_size, uint8_t turn_time) {
     } else {
       printf("Score is %d-%d\n",player2Score,player1Score);
     }
+    //R.4
     printf("Board:");
     for(i = 0; i < board_size; i++) {
       printf(" %c", board[i]);
