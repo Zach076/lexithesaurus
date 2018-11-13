@@ -13,7 +13,7 @@
  #include "trie.h"
 
 #define MAXWORDSIZE 255
-#define DICTIONARYPATH "twl06.txt"
+#define DICTIONARYPATH "./twl06.txt"
 #define QLEN 6 /* size of request queue */
 #define TRUE 1
 #define FALSE 0
@@ -63,7 +63,7 @@ void makeBoard(char* board, uint8_t board_size) {
 int check_guess(char* guess,char* board){
     int letterCount[26];
     int i;
-    int valid =TRUE;
+    int valid = TRUE;
 
     for(i=0;i <strlen(board);i++){
         letterCount[board[i] - 97]++;
@@ -133,6 +133,7 @@ void turn_handler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
             if(check_guess(guessbuffer,board)){
                 //guess is valid
                 send(ap,&validguess,sizeof(validguess),0);
+                send(iap,&validguess,sizeof(validguess),0);
                 //send length to inactive player
                 send(iap,&wordlength,sizeof(wordlength),0);
                 //send the guessed word
@@ -231,6 +232,7 @@ void populateTrie(char* dictionaryPath) {
 
   fp = fopen(dictionaryPath, "r");
   while(fgets(fileBuffer,1000,(FILE*)fp)) {
+    fileBuffer[strlen(fileBuffer)-2] = '\0';
     if(!trie_insert(dictionary, fileBuffer, (TrieValue)value)) {
       fprintf(stderr,"trie_insert didn't insert correctly \n");
     }

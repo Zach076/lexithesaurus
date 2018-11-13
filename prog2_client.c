@@ -11,6 +11,9 @@
 #include <unistd.h>
 
 #define MAXWORDSIZE 255
+#define TRUE 1
+#define FALSE 0
+
 /*------------------------------------------------------------------------
 * Program: demo_client
 *
@@ -35,60 +38,67 @@ void turn_handler(int sd) {
     uint8_t guessSize;
     char guess[MAXWORDSIZE];
     uint8_t isCorrect;
+    int done = FALSE;
 
-    memset(guess,0,sizeof(guess));
+    //while(!done) {
 
-    n = recv(sd, &turnFlag, sizeof(turnFlag), 0);
-    if (n != sizeof(turnFlag)) {
-        fprintf(stderr,"Read Error: Turn flag not read properly\n");
-        exit(EXIT_FAILURE);
-    }
+      memset(guess,0,sizeof(guess));
 
-    if(turnFlag == 'Y') {
-        //ap
-        printf("Your turn, enter a word: ");
-        //TODO read from thing
-        fgets(guess,MAXWORDSIZE,stdin);
-        guess[strlen(guess)-1]=0;
+      n = recv(sd, &turnFlag, sizeof(turnFlag), 0);
+      if (n != sizeof(turnFlag)) {
+          fprintf(stderr,"Read Error: Turn flag not read properly\n");
+          exit(EXIT_FAILURE);
+      }
 
-        guessSize = (uint8_t)strlen(guess);
-        send(sd,&guessSize,sizeof(guessSize),0);
-        send(sd,guess,guessSize,0);
-        recv(sd,&isCorrect,sizeof(isCorrect),0);
+      if(turnFlag == 'Y') {
+          //ap
+          printf("Your turn, enter a word: ");
+          //TODO read from thing
+          fgets(guess,MAXWORDSIZE,stdin);
+          guess[strlen(guess)-1]=0;
 
-        if(isCorrect == 1){
-            printf("Valid word!\n");
-        }
-        else{
-            printf("Invalid word!\n");
-        }
+          guessSize = (uint8_t)strlen(guess);
+          send(sd,&guessSize,sizeof(guessSize),0);
+          send(sd,guess,guessSize,0);
+          recv(sd,&isCorrect,sizeof(isCorrect),0);
 
-    }else {
-        //iap
-        printf("Please wait for opponent to enter word... \n");
+          if(isCorrect == 1){
+              printf("Valid word!\n");
+          }
+          else{
+              printf("Invalid word!\n");
 
-        recv(sd,&isCorrect,sizeof(isCorrect),0);
+              done = TRUE;
+          }
 
-        if(isCorrect == 1){
-            n = recv(sd, &guessSize, sizeof(guessSize), 0);
-            if (n != guessSize) {
-                fprintf(stderr,"Read Error: Guess size not read properly");
-                exit(EXIT_FAILURE);
-            }
+      } else if(turnFlag == 'N'){
+          //iap
+          printf("Please wait for opponent to enter word... \n");
 
-            n = recv(sd, guess, guessSize, 0);
-            if (n != guessSize) {
-                fprintf(stderr,"Read Error: Guess not read properly");
-                exit(EXIT_FAILURE);
-            }
+          recv(sd,&isCorrect,sizeof(isCorrect),0);
 
-            printf("Opponent entered \"%s\" \n",guess);
+          if(isCorrect == 1){
+              n = recv(sd, &guessSize, sizeof(guessSize), 0);
+              if (n != sizeof(guessSize)) {
+                  fprintf(stderr,"Read Error: Guess size not read properly");
+                  exit(EXIT_FAILURE);
+              }
 
-        }
-        else{
-            printf("Opponent lost the round!\n");
-        }
-    }
+              n = recv(sd, guess, guessSize, 0);
+              if (n != guessSize) {
+                  fprintf(stderr,"Read Error: Guess not read properly");
+                  exit(EXIT_FAILURE);
+              }
+
+              printf("Opponent entered \"%s\" \n",guess);
+
+          } else {
+              printf("Opponent lost the round!\n");
+
+              done = TRUE;
+          }
+      }
+    //}
 }
 
 void play_game(int sd, char playerNum, uint8_t board_size, uint8_t turn_time) {
@@ -145,7 +155,6 @@ void play_game(int sd, char playerNum, uint8_t board_size, uint8_t turn_time) {
       printf("\n");
 
       turn_handler(sd);
-
   }
 
 }
