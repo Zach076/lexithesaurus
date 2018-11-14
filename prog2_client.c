@@ -61,9 +61,9 @@ void turnHandler(int sd) {
       recv(sd,&isCorrect,sizeof(isCorrect),0);
 
       if(isCorrect == 1){
-        printf("Valid word!\n");
+        printf("Valid word\n");
       } else{
-        printf("Invalid word!\n");
+        printf("Invalid word\n");
 
         done = TRUE;
       }
