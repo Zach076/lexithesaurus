@@ -32,131 +32,143 @@
 *------------------------------------------------------------------------
 */
 
-void turn_handler(int sd) {
-    char turnFlag;
-    ssize_t n;
-    uint8_t guessSize;
-    char guess[MAXWORDSIZE];
-    uint8_t isCorrect;
-    int done = FALSE;
+void turnHandler(int sd) {
+  char turnFlag;
+  ssize_t n;
+  uint8_t guessSize;
+  char guess[MAXWORDSIZE];
+  uint8_t isCorrect;
+  int done = FALSE;
 
-    //while(!done) {
+  while(!done) {
 
-      memset(guess,0,sizeof(guess));
+    memset(guess,0,sizeof(guess));
 
-      n = recv(sd, &turnFlag, sizeof(turnFlag), 0);
-      if (n != sizeof(turnFlag)) {
-          fprintf(stderr,"Read Error: Turn flag not read properly\n");
+    n = recv(sd, &turnFlag, sizeof(turnFlag), 0);
+    if (n != sizeof(turnFlag)) {
+      fprintf(stderr,"Read Error: Turn flag not read properly\n");
+      exit(EXIT_FAILURE);
+    }
+
+    if(turnFlag == 'Y') {
+      //ap
+      printf("Your turn, enter a word: ");
+      fgets(guess,MAXWORDSIZE,stdin);
+      guess[strlen(guess)-1]=0;
+
+      guessSize = (uint8_t)strlen(guess);
+      send(sd,&guessSize,sizeof(guessSize),0);
+      send(sd,guess,guessSize,0);
+      recv(sd,&isCorrect,sizeof(isCorrect),0);
+
+      if(isCorrect == 1){
+        printf("Valid word!\n");
+      } else{
+        printf("Invalid word!\n");
+
+        done = TRUE;
+      }
+
+    } else if(turnFlag == 'N'){
+      //iap
+      printf("Please wait for opponent to enter word... \n");
+
+      recv(sd,&isCorrect,sizeof(isCorrect),0);
+
+      if(isCorrect == 1){
+        n = recv(sd, &guessSize, sizeof(guessSize), 0);
+        if (n != sizeof(guessSize)) {
+          fprintf(stderr,"Read Error: Guess size not read properly");
           exit(EXIT_FAILURE);
+        }
+
+        n = recv(sd, guess, guessSize, 0);
+        if (n != guessSize) {
+          fprintf(stderr,"Read Error: Guess not read properly");
+          exit(EXIT_FAILURE);
+        }
+
+        printf("Opponent entered \"%s\" \n",guess);
+
+      } else {
+        printf("Opponent lost the round!\n");
+
+        done = TRUE;
       }
-
-      if(turnFlag == 'Y') {
-          //ap
-          printf("Your turn, enter a word: ");
-          //TODO read from thing
-          fgets(guess,MAXWORDSIZE,stdin);
-          guess[strlen(guess)-1]=0;
-
-          guessSize = (uint8_t)strlen(guess);
-          send(sd,&guessSize,sizeof(guessSize),0);
-          send(sd,guess,guessSize,0);
-          recv(sd,&isCorrect,sizeof(isCorrect),0);
-
-          if(isCorrect == 1){
-              printf("Valid word!\n");
-          }
-          else{
-              printf("Invalid word!\n");
-
-              done = TRUE;
-          }
-
-      } else if(turnFlag == 'N'){
-          //iap
-          printf("Please wait for opponent to enter word... \n");
-
-          recv(sd,&isCorrect,sizeof(isCorrect),0);
-
-          if(isCorrect == 1){
-              n = recv(sd, &guessSize, sizeof(guessSize), 0);
-              if (n != sizeof(guessSize)) {
-                  fprintf(stderr,"Read Error: Guess size not read properly");
-                  exit(EXIT_FAILURE);
-              }
-
-              n = recv(sd, guess, guessSize, 0);
-              if (n != guessSize) {
-                  fprintf(stderr,"Read Error: Guess not read properly");
-                  exit(EXIT_FAILURE);
-              }
-
-              printf("Opponent entered \"%s\" \n",guess);
-
-          } else {
-              printf("Opponent lost the round!\n");
-
-              done = TRUE;
-          }
-      }
-    //}
+    }
+  }
 }
 
-void play_game(int sd, char playerNum, uint8_t board_size, uint8_t turn_time) {
+void betterRead(int sd, void* buf, size_t len, char* error) {
+  ssize_t n;
+  n = read(sd, buf, len);
+  if (n != len) {
+    fprintf(stderr,"Read Error: %s Score not read properly\n", error);
+    exit(EXIT_FAILURE);
+  }
+}
+
+void recieve(int sd, void* buf, size_t len, int flags, char* error) {
+  ssize_t n;
+  n = recv(sd, buf, len, flags);
+  if (n != len) {
+    fprintf(stderr,"Read Error: %s Score not read properly\n", error);
+    exit(EXIT_FAILURE);
+  }
+}
+
+void playGame(int sd, char playerNum, uint8_t boardSize, uint8_t turnTime) {
   char guessBuffer[MAXWORDSIZE+1];
-  char board[board_size+1];
+  char board[boardSize+1];
   uint8_t player1Score = 0;
   uint8_t player2Score = 0;
-  uint8_t roundNum;
-  ssize_t n;
+  uint8_t roundNum = 0;
+  size_t n;
+  uint8_t lastRound = 0;
   int i; //for loop
 
   memset(guessBuffer,0,sizeof(guessBuffer)); //this essentially adds the null  terminator to the board for us.
   memset(board,0,sizeof(board));
 
   while(player1Score < 3 && player2Score < 3) {
-      //R.1
-      n = read(sd, &player1Score, sizeof(player1Score));
-      if (n != sizeof(player1Score)) {
-          fprintf(stderr,"Read Error: Player1 Score not read properly\n");
-          exit(EXIT_FAILURE);
-      }
+    //R.1
+    betterRead(sd, &player1Score, sizeof(player1Score), "Player1");
+    betterRead(sd, &player2Score, sizeof(player2Score), "Player2");
+    //R.2
+    betterRead(sd, &roundNum, sizeof(roundNum), "Round number");
+    //R.4
+    recieve(sd, board, boardSize, 0, "Board");
 
-      n = read(sd, &player2Score, sizeof(player2Score));
-      if (n != sizeof(player2Score)) {
-          fprintf(stderr,"Read Error: Player2 Score not read properly\n");
-          exit(EXIT_FAILURE);
-      }
 
-      //R.2
-      n = read(sd, &roundNum, sizeof(roundNum));
-      if (n != sizeof(roundNum)) {
-          fprintf(stderr,"Read Error: Round number not read properly\n");
-          exit(EXIT_FAILURE);
-      }
+    printf("\nRound %d... \n", roundNum);
+    if (playerNum == '1') {
+      printf("Score is %d-%d\n", player1Score, player2Score);
+    } else {
+      printf("Score is %d-%d\n", player2Score, player1Score);
+    }
+    //R.4
+    printf("Board:");
+    for (i = 0; i < boardSize; i++) {
+      printf(" %c", board[i]);
+    }
+    printf("\n");
 
-      //R.4
-      n = recv(sd, board, board_size, 0);
-      if (n != board_size) {
-          fprintf(stderr,"Read Error: Board not read properly\n");
-          exit(EXIT_FAILURE);
-      }
-
-      printf("\nRound %d... \n", roundNum);
-      if (playerNum == '1') {
-          printf("Score is %d-%d\n", player1Score, player2Score);
-      } else {
-          printf("Score is %d-%d\n", player2Score, player1Score);
-      }
-      //R.4
-      printf("Board:");
-      for (i = 0; i < board_size; i++) {
-          printf(" %c", board[i]);
-      }
-      printf("\n");
-
-      turn_handler(sd);
+    turnHandler(sd);
   }
 
+  if (player1Score == '3') {
+    if (playerNum == '1') {
+      printf("You Won!");
+    } else {
+      printf("You Lost!");
+    }
+  } else {
+    if (playerNum == '2') {
+      printf("You Won!");
+    } else {
+      printf("You Lost!");
+    }
+  }
 }
 
 //main function, mostly connection logic
@@ -169,8 +181,8 @@ int main( int argc, char **argv) {
   char *host; /* pointer to host name */
   int n; /* number of characters read */
   char buf[1000]; /* buffer for data from the server */
-  uint8_t board_size;
-  uint8_t turn_time;
+  uint8_t boardSize;
+  uint8_t turnTime;
   char playerNum;
   memset((char *)&sad,0,sizeof(sad)); /* clear sockaddr structure */
   sad.sin_family = AF_INET; /* set family to Internet */
@@ -231,22 +243,22 @@ int main( int argc, char **argv) {
     fprintf(stderr,"You are Player 2... \n");
   }
 
-  n = read(sd,&board_size,sizeof(board_size));
-  if(n != sizeof(board_size)){
-    fprintf(stderr,"Read Error: board_size not read properly");
+  n = read(sd,&boardSize,sizeof(boardSize));
+  if(n != sizeof(boardSize)){
+    fprintf(stderr,"Read Error: boardSize not read properly");
     exit(EXIT_FAILURE);
   }
-  fprintf(stderr,"Board size : %d \n",board_size);
+  fprintf(stderr,"Board size : %d \n",boardSize);
 
-  n = read(sd,&turn_time,sizeof(turn_time));
-  if(n != sizeof(turn_time)){
-    fprintf(stderr,"Read Error: turn_time not read properly");
+  n = read(sd,&turnTime,sizeof(turnTime));
+  if(n != sizeof(turnTime)){
+    fprintf(stderr,"Read Error: turnTime not read properly");
     exit(EXIT_FAILURE);
   }
-  fprintf(stderr,"Seconds per turn : %d \n",turn_time);
+  fprintf(stderr,"Seconds per turn : %d \n",turnTime);
 
   /* Game Logic function */
-  play_game(sd, playerNum, board_size, turn_time);
+  playGame(sd, playerNum, boardSize, turnTime);
 
   //in case real bad things happen still close the socket and exit nicely
   close(sd);
