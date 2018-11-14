@@ -3,7 +3,6 @@
 * 31 OCT 2018, Zach Richardson and Mitch Kimball
 */
 
-//TODO: ALTER CODE FROM FIRST PROJECT
 #include<netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -126,11 +125,12 @@ void playGame(int sd, char playerNum, uint8_t boardSize, uint8_t turnTime) {
   size_t n;
   uint8_t lastRound = 0;
   int i; //for loop
+  int done = FALSE;
 
   memset(guessBuffer,0,sizeof(guessBuffer)); //this essentially adds the null  terminator to the board for us.
   memset(board,0,sizeof(board));
 
-  while(player1Score < 3 && player2Score < 3) {
+  while(!done) {
     //R.1
     betterRead(sd, &player1Score, sizeof(player1Score), "Player1");
     betterRead(sd, &player2Score, sizeof(player2Score), "Player2");
@@ -139,34 +139,37 @@ void playGame(int sd, char playerNum, uint8_t boardSize, uint8_t turnTime) {
     //R.4
     recieve(sd, board, boardSize, 0, "Board");
 
+    if(player1Score < 3 && player2Score < 3) {
+      printf("\nRound %d... \n", roundNum);
+      if (playerNum == '1') {
+        printf("Score is %d-%d\n", player1Score, player2Score);
+      } else {
+        printf("Score is %d-%d\n", player2Score, player1Score);
+      }
+      //R.4
+      printf("Board:");
+      for (i = 0; i < boardSize; i++) {
+        printf(" %c", board[i]);
+      }
+      printf("\n");
 
-    printf("\nRound %d... \n", roundNum);
-    if (playerNum == '1') {
-      printf("Score is %d-%d\n", player1Score, player2Score);
+      turnHandler(sd);
     } else {
-      printf("Score is %d-%d\n", player2Score, player1Score);
+      done = TRUE;
     }
-    //R.4
-    printf("Board:");
-    for (i = 0; i < boardSize; i++) {
-      printf(" %c", board[i]);
-    }
-    printf("\n");
-
-    turnHandler(sd);
   }
 
   if (player1Score == '3') {
     if (playerNum == '1') {
-      printf("You Won!");
+      printf("You Won!\n");
     } else {
-      printf("You Lost!");
+      printf("You Lost!\n");
     }
   } else {
     if (playerNum == '2') {
-      printf("You Won!");
+      printf("You Won!\n");
     } else {
-      printf("You Lost!");
+      printf("You Lost!\n");
     }
   }
 }

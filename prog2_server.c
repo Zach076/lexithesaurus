@@ -3,7 +3,6 @@
 * 31 OCT 2018, Zach Richardson and Mitch Kimball
 */
 
-//TODO: ALTER CODE FROM FIRST PROJECT
 #include <time.h>
 #include <netdb.h>
 #include <stdio.h>
@@ -70,10 +69,7 @@ void makeBoard(char* board, uint8_t boardSize) {
     vowel = 1;
 
     board[i] = randChar;
-    //TODO remove printing
-    fprintf(stderr, "%c", board[i]);
   }
-  fprintf(stderr, "\n");
 }
 
 int checkGuess(char* guess,char* board){
@@ -202,10 +198,14 @@ void play_game(uint8_t boardSize, uint8_t turnTime, int sd2, int sd3) {
   uint8_t roundNum = 1;
   uint8_t player1Score = 0;
   uint8_t player2Score = 0;
+  int done = FALSE;
 
   memset(board,0,sizeof(board));
 
-  while(player1Score < 3 && player2Score < 3) {
+  while(!done) {
+    if(player1Score == 3 || player2Score == 3) {
+      done = TRUE;
+    }
     //R.1
     send(sd2,&player1Score,sizeof(player1Score),0);
     send(sd3,&player1Score,sizeof(player1Score),0);
@@ -220,14 +220,16 @@ void play_game(uint8_t boardSize, uint8_t turnTime, int sd2, int sd3) {
     send(sd2,&board,(size_t)boardSize,0);
     send(sd3,&board,(size_t)boardSize,0);
 
-    //R.5+R.6
-    if(roundNum%2 == 0){
-      turnHandler(sd3,sd2, board, &player2Score, &player1Score);
-    } else{
-      turnHandler(sd2,sd3, board, &player1Score, &player2Score);
+    if(!done) {
+      //R.5+R.6
+      if(roundNum%2 == 0){
+        turnHandler(sd3,sd2, board, &player2Score, &player1Score);
+      } else{
+        turnHandler(sd2,sd3, board, &player1Score, &player2Score);
+      }
+      //increment round number
+      roundNum++;
     }
-    //increment round number
-    roundNum++;
   }
 
 }
