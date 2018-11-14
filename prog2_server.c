@@ -3,13 +3,13 @@
 * 31 OCT 2018, Zach Richardson and Mitch Kimball
 */
 
+#include "trie.h"
 #include <time.h>
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "trie.h"
 
 #define MAXWORDSIZE 255
 #define QLEN 6 /* size of request queue */
@@ -60,13 +60,19 @@ void makeBoard(char* board, uint8_t boardSize) {
   srand(time(NULL));
   for (int i = 0; i < boardSize; i++) {
 
-    if(i != boardSize-1 || vowel)
-    randChar = (rand() %(122-97+1))+97;
-    else
-    randChar = vowels[rand()%(4-0+1)];
+    if(i != boardSize-1 || vowel) {
+      randChar = (rand() %(122-97+1))+97;
+    } else {
+      randChar = vowels[rand()%(4-0+1)];
+    }
 
-    if(randChar == 'a' || randChar == 'e' || randChar == 'i' || randChar == 'o' || randChar == 'u')
-    vowel = 1;
+    if(randChar == 'a' ||
+       randChar == 'e' ||
+       randChar == 'i' ||
+       randChar == 'o' ||
+       randChar == 'u') {
+      vowel = 1;
+    }
 
     board[i] = randChar;
   }
@@ -242,7 +248,7 @@ void populateTrie(char* dictionaryPath) {
   int* value = &secretVal;
 
   fp = fopen(dictionaryPath, "r");
-  while(fgets(fileBuffer,1000,(FILE*)fp)) {
+  while(fgets(fileBuffer,1000,fp)) {
     fileBuffer[strlen(fileBuffer)-2] = '\0';
     if(!trie_insert(dictionary, fileBuffer, (TrieValue)value)) {
       fprintf(stderr,"trie_insert didn't insert correctly \n");
