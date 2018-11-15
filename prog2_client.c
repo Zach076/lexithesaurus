@@ -100,6 +100,8 @@ void turnHandler(int sd) {
 
 void betterRead(int sd, void* buf, size_t len, char* error) {
   ssize_t n;
+  uint8_t payloadSize = 0;
+  uint8_t bytesRead = 0;
   n = read(sd, buf, len);
   if (n != len) {
     fprintf(stderr,"Read Error: %s Score not read properly\n", error);
@@ -109,11 +111,28 @@ void betterRead(int sd, void* buf, size_t len, char* error) {
 
 void recieve(int sd, void* buf, size_t len, int flags, char* error) {
   ssize_t n;
-  n = recv(sd, buf, len, flags);
-  if (n != len) {
-    fprintf(stderr,"Read Error: %s Score not read properly\n", error);
+  uint8_t payloadSize = 0;
+  uint8_t bytesRead = 0;
+  n = recv(sd,&payloadSize, sizeof(uint8_t), flags);
+  if (n != sizeof(uint8_t)) {
+    fprintf(stderr,"Read Error: %s not read properly\n", error);
     exit(EXIT_FAILURE);
   }
+  n=0;
+
+  while(bytesRead < payloadSize){
+    n = recv(sd, buf,1,flags);
+    bytesRead += n;
+  }
+
+}
+
+void betterSend(int sd,void* buf, size_t len ,int flags) {
+  uint8_t payloadSize = (uint8_t)len;
+  //send payload size
+  send(sd,&payloadSize,sizeof(payloadSize),flags);
+  //send payload
+  send(sd, buf, len ,flags);
 }
 
 void playGame(int sd, char playerNum, uint8_t boardSize, uint8_t turnTime) {
@@ -132,12 +151,16 @@ void playGame(int sd, char playerNum, uint8_t boardSize, uint8_t turnTime) {
 
   while(!done) {
     //R.1
-    betterRead(sd, &player1Score, sizeof(player1Score), "Player1");
-    betterRead(sd, &player2Score, sizeof(player2Score), "Player2");
+    //betterRead(sd, &player1Score, sizeof(player1Score), "Player1");
+    //betterRead(sd, &player2Score, sizeof(player2Score), "Player2");
+    recieve(sd, &player1Score, sizeof(player1Score), 0, "Player1 Score");
+    recieve(sd, &player2Score, sizeof(player2Score), 0, "Player2 Score");
     //R.2
-    betterRead(sd, &roundNum, sizeof(roundNum), "Round number");
+    //betterRead(sd, &roundNum, sizeof(roundNum), "Round number");
+    recieve(sd, &roundNum, sizeof(roundNum), 0, "Round number");
     //R.4
-    recieve(sd, board, boardSize, 0, "Board");
+    //printf("Board size is %d\n",boardSize);
+    recieve(sd, board, (size_t)boardSize, 0, "Board");
 
     if(player1Score < 3 && player2Score < 3) {
       printf("\nRound %d... \n", roundNum);
