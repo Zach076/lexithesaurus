@@ -55,7 +55,7 @@ void recieve(int sd, void* buf, size_t len, int flags, char* error) {
   n=0;
 
   while(bytesRead < payloadSize){
-    n = recv(sd, buf,1,flags);
+    n = recv(sd, buf, len, flags);
     bytesRead += n;
   }
 
@@ -240,8 +240,8 @@ void play_game(uint8_t boardSize, uint8_t turnTime, int sd2, int sd3) {
     //R.3
     makeBoard(board, boardSize);
     //R.4
-    betterSend(sd2,&board,(size_t)boardSize,0);
-    betterSend(sd3,&board,(size_t)boardSize,0);
+    send(sd2,&board,(size_t)boardSize,0);
+    send(sd3,&board,(size_t)boardSize,0);
 
     if(!done) {
       //R.5+R.6
