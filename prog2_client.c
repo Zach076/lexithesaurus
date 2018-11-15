@@ -30,13 +30,32 @@
 *
 *------------------------------------------------------------------------
 */
+int reader(char* guess, uint8_t sec) {
+  fd_set set;
+  struct timeval timeout = {sec,0}; //timeout of 10 secs.
+  int n;
+  FD_ZERO(&set);
+  FD_SET(0,&set);
+  n =  select(1,&set,NULL,NULL,&timeout);
+  if(n == 0){
+    //timeout
+    return 0;
+  } else if(n == -1) {
+    //error
+    return 0;
+  } else {
+    fgets(guess,MAXWORDSIZE,stdin);
+    return 1;
+  }
+}
 
-void turnHandler(int sd) {
+void turnHandler(int sd, uint8_t turnTime) {
   char turnFlag;
   ssize_t n;
   uint8_t guessSize;
   char guess[MAXWORDSIZE];
   uint8_t isCorrect;
+  uint8_t broken = FALSE;
   int done = FALSE;
 
   while(!done) {
@@ -50,25 +69,32 @@ void turnHandler(int sd) {
     }
 
     if(turnFlag == 'Y') {
-      //ap
-      printf("Your turn, enter a word: ");
-      fgets(guess,MAXWORDSIZE,stdin);
+      //apfprintf(stderr,"Read Error: Guess size not read properly");
+      fprintf(stderr, "Your turn, enter a word: ");
+      //fgets(guess,MAXWORDSIZE,stdin);
+      if (!reader(guess, turnTime)) {
+        broken = TRUE;
+        send(sd,&broken,sizeof(broken),0);
+      }
       guess[strlen(guess)-1]=0;
 
       guessSize = (uint8_t)strlen(guess);
+      send(sd,&broken,sizeof(broken),0);
       send(sd,&guessSize,sizeof(guessSize),0);
       send(sd,guess,guessSize,0);
       recv(sd,&isCorrect,sizeof(isCorrect),0);
 
       if(isCorrect == 1){
         printf("Valid word\n");
-      } else{
+      } else if(broken){
+        printf("\nTimed out\n");
+      } else {
         printf("Invalid word\n");
 
         done = TRUE;
       }
 
-    } else if(turnFlag == 'N'){
+    } else if(turnFlag == 'N') {
       //iap
       printf("Please wait for opponent to enter word... \n");
 
@@ -212,7 +238,7 @@ void playGame(int sd, char playerNum, uint8_t boardSize, uint8_t turnTime) {
       }
       printf("\n");
 
-      turnHandler(sd);
+      turnHandler(sd, turnTime);
     } else {
       done = TRUE;
     }

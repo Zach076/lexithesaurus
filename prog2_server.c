@@ -165,6 +165,7 @@ void turnHandler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
   char guessbuffer[MAXWORDSIZE];
   Trie* guessedWords = trie_new();
   uint8_t validguess = TRUE;
+  uint8_t broken = FALSE;
 
   memset(guessbuffer,0,sizeof(guessbuffer));
   int ap = p1;
@@ -174,7 +175,13 @@ void turnHandler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
     //T.1
     send(ap,&yourTurn,sizeof(yourTurn),0);
     send(iap,&notYourTurn,sizeof(notYourTurn),0);
-    //TODO: set flag for timeouts
+
+    //recieve timeout
+    n = recv(ap,&broken,sizeof(broken),0);
+    if(n != sizeof(broken)){
+      fprintf(stderr,"recv error: broken not read properly\n");
+      exit(EXIT_FAILURE);
+    }
 
     // recieve players guess
     n = recv(ap,&wordlength,sizeof(wordlength),0);
