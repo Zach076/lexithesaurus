@@ -195,7 +195,7 @@ void playGame(int sd, char playerNum, uint8_t boardSize, uint8_t turnTime) {
       printf("You lost\n");
     }
   } else {
-    if (playerNum == '2') {
+    if (playerNum == '1') {
       printf("You won\n");
     } else {
       printf("You lost\n");
