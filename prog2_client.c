@@ -39,14 +39,15 @@ int reader(char* guess, uint8_t sec) {
   n =  select(1,&set,NULL,NULL,&timeout);
   if(n == 0){
     //timeout
-    return 0;
+    n = 0;
   } else if(n == -1) {
     //error
-    return 0;
+    n = 0;
   } else {
     fgets(guess,MAXWORDSIZE,stdin);
-    return 1;
+    n = 1;
   }
+  return n;
 }
 
 void turnHandler(int sd, uint8_t turnTime) {
