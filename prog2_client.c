@@ -88,6 +88,8 @@ void turnHandler(int sd, uint8_t turnTime) {
         printf("Valid word\n");
       } else if(broken){
         printf("\nTimed out\n");
+
+        done = TRUE;
       } else {
         printf("Invalid word\n");
 
