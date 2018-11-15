@@ -137,71 +137,12 @@ void betterRead(int sd, void* buf, size_t len, char* error) {
 }
 
 void recieve(int sd, void* buf, size_t len, int flags, char* error) {
-  /*
-  fd_set read_fds;
-
-  struct timeval timeout;
-  timeout.tv_sec = 30;
-  timeout.tv_usec = 0;
-
-  FD_ZERO(read_fds);
-  FD_SET(sd, read_fds);
-
-  int rv = select(sd + 1, &read_fds, NULL, NULL, &timeout);
-  if (rv == 0)
-  {
-    // timeout, socket does not have anything to read
-    fprintf(stderr, "timeout...\n");
-  }
-  else
-  {
-    // socket has something to read
-    int recv_size = recv(sd, buf, len, flags);
-    if (recv_size == 0)
-    {
-      // peer disconnected...
-      fprintf(stderr, "peer disconnected...\n");
-    }
-    else
-    {
-      // read successful...
-      fprintf(stderr, "read successful...\n");
-    }
-  }
-  */
   ssize_t n;
   n = recv(sd, buf, len, flags);
   if (n != len) {
     fprintf(stderr,"Read Error: %s Score not read properly\n", error);
     exit(EXIT_FAILURE);
   }
-}
-
-/*
-void recieve(int sd, void* buf, size_t len, int flags, char* error) {
-  ssize_t n;
-  uint8_t payloadSize = 0;
-  uint8_t bytesRead = 0;
-  n = recv(sd,&payloadSize, sizeof(uint8_t), flags);
-  if (n != sizeof(uint8_t)) {
-    fprintf(stderr,"Read Error: %s Score not read properly\n", error);
-    exit(EXIT_FAILURE);
-  }
-  n=0;
-
-  while(bytesRead < payloadSize){
-    n = recv(sd, buf, len, flags);
-    bytesRead += n;
-  }
-}
-*/
-
-void betterSend(int sd,void* buf, size_t len ,int flags) {
-  uint8_t payloadSize = (uint8_t)len;
-  //send payload size
-  send(sd,&payloadSize,sizeof(payloadSize),flags);
-  //send payload
-  send(sd, buf, len ,flags);
 }
 
 void playGame(int sd, char playerNum, uint8_t boardSize, uint8_t turnTime) {
