@@ -188,14 +188,6 @@ void playGame(int sd, char playerNum, uint8_t boardSize, uint8_t turnTime) {
     }
   }
 
-  printf("\n\nPlayerNum: %c\n", playerNum);
-
-  if (playerNum == '1') {
-    printf("Score is %d-%d\n", player1Score, player2Score);
-  } else {
-    printf("Score is %d-%d\n", player2Score, player1Score);
-  }
-
   if (player1Score == 3) {
     if (playerNum == '1') {
       printf("You won\n");
