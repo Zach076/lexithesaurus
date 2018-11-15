@@ -4,8 +4,8 @@
 */
 
 #include "trie.h"
-#include <time.h>
 #include <netdb.h>
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
