@@ -44,6 +44,48 @@ void betterRead(int sd, void* buf, size_t len, char* error) {
 }
 
 void recieve(int sd, void* buf, size_t len, int flags, char* error) {
+  /*
+  fd_set read_fds;
+
+  struct timeval timeout;
+  timeout.tv_sec = 30;
+  timeout.tv_usec = 0;
+
+  FD_ZERO(read_fds);
+  FD_SET(sd, read_fds);
+
+  int rv = select(sd + 1, &read_fds, NULL, NULL, &timeout);
+  if (rv == 0)
+  {
+    // timeout, socket does not have anything to read
+    fprintf(stderr, "timeout...\n");
+  }
+  else
+  {
+    // socket has something to read
+    int recv_size = recv(sd, buf, len, flags);
+    if (recv_size == 0)
+    {
+      // peer disconnected...
+      fprintf(stderr, "peer disconnected...\n");
+    }
+    else
+    {
+      // read successful...
+      fprintf(stderr, "read successful...\n");
+    }
+  }
+  */
+  ssize_t n;
+  n = recv(sd, buf, len, flags);
+  if (n != len) {
+    fprintf(stderr,"Read Error: %s Score not read properly\n", error);
+    exit(EXIT_FAILURE);
+  }
+}
+
+/*
+void recieve(int sd, void* buf, size_t len, int flags, char* error) {
   ssize_t n;
   uint8_t payloadSize = 0;
   uint8_t bytesRead = 0;
@@ -60,6 +102,7 @@ void recieve(int sd, void* buf, size_t len, int flags, char* error) {
   }
 
 }
+*/
 
 void betterSend(int sd,void* buf, size_t len ,int flags) {
   uint8_t payloadSize = (uint8_t)len;
@@ -230,13 +273,13 @@ void play_game(uint8_t boardSize, uint8_t turnTime, int sd2, int sd3) {
       done = TRUE;
     }
     //R.1
-    betterSend(sd2,&player1Score,sizeof(player1Score),0);
-    betterSend(sd3,&player1Score,sizeof(player1Score),0);
-    betterSend(sd2,&player2Score,sizeof(player2Score),0);
-    betterSend(sd3,&player2Score,sizeof(player2Score),0);
+    send(sd2,&player1Score,sizeof(player1Score),0);
+    send(sd3,&player1Score,sizeof(player1Score),0);
+    send(sd2,&player2Score,sizeof(player2Score),0);
+    send(sd3,&player2Score,sizeof(player2Score),0);
     //R.2
-    betterSend(sd2,&roundNum,sizeof(roundNum),0);
-    betterSend(sd3,&roundNum,sizeof(roundNum),0);
+    send(sd2,&roundNum,sizeof(roundNum),0);
+    send(sd3,&roundNum,sizeof(roundNum),0);
     //R.3
     makeBoard(board, boardSize);
     //R.4
