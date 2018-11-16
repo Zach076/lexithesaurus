@@ -42,12 +42,12 @@ void betterSend(int sd, void* buf, size_t len, int sd2) {
     n = send(sd, buf, len, 0);
     if(n == -1) {
       if(errno != ENOBUFS && errno != ENOMEM) {
-        n = 0;
+        //n = 0;
         close(sd);
         close(sd2);
         exit(EXIT_FAILURE);
       } else {
-        sleep(2);
+        sleep(1);
       }
     }
   }
