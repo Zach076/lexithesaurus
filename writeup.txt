@@ -1,0 +1,4 @@
+1. Zach Richardson and Mitch Kimball
+2. Our program isn't meeting the efficiency tests sometimes. We assume -1 is a pipe error rather than a recoverable error. Given more time we would implement error checking and retry sends and recieves. 
+3. We play-tested our program multiple times giving different inputs and testing edge cases. We continuously checked the athina script output to see what those tests found wrong with our program. 
+4. The overall more complex game logic made for a more difficult assignment but we struggled specifically on how to implement turn timeouts. 

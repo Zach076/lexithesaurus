@@ -43,11 +43,13 @@ void betterRead(int sd, void* buf, size_t len, char* error) {
   }
 }
 
-void recieve(int sd, void* buf, size_t len, int flags, char* error) {
+void recieve(int sd, void* buf, size_t len, char* error, int sd2) {
   ssize_t n;
-  n = recv(sd, buf, len, flags);
+  n = recv(sd, buf, len, MSG_WAITALL);
   if (n != len) {
     fprintf(stderr,"Read Error: %s Score not read properly\n", error);
+    close(sd);
+    close(sd2);
     exit(EXIT_FAILURE);
   }
 }
@@ -120,30 +122,12 @@ void turnHandler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
     send(iap,&notYourTurn,sizeof(notYourTurn),0);
 
     //recieve timeout
-    n = recv(ap,&timeoutFlag,sizeof(timeoutFlag),0);
-    if(n != sizeof(timeoutFlag)){
-      fprintf(stderr,"recv error: timeoutFlag not read properly\n");
-      close(p1);
-      close(p2);
-      exit(EXIT_FAILURE);
-    }
+    recieve(ap,&timeoutFlag,sizeof(timeoutFlag),"timeoutFlag", iap);
 
     // recieve players guess
-    n = recv(ap,&wordlength,sizeof(wordlength),0);
-    if(n != sizeof(wordlength)){
-      fprintf(stderr,"recv error: wordlength not read properly\n");
-      close(p1);
-      close(p2);
-      exit(EXIT_FAILURE);
-    }
+    recieve(ap,&wordlength,sizeof(wordlength),"wordlength", iap);
 
-    n = recv(ap,guessbuffer,wordlength,0);
-    if(n != wordlength){
-      fprintf(stderr,"recv error: word not read properly\n");
-      close(p1);
-      close(p2);
-      exit(EXIT_FAILURE);
-    }
+    recieve(ap,guessbuffer,wordlength,"Word", iap);
 
     if(!search(dictionary,guessbuffer)){
       //not valid word

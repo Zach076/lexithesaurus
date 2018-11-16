@@ -50,6 +50,16 @@ int reader(char* guess, uint8_t sec) {
   return n;
 }
 
+void recieve(int sd, void* buf, size_t len, char* error) {
+  ssize_t n;
+  n = recv(sd, buf, len, MSG_WAITALL);
+  if (n != len) {
+    fprintf(stderr,"Read Error: %s Score not read properly\n", error);
+    close(sd);
+    exit(EXIT_FAILURE);
+  }
+}
+
 void turnHandler(int sd, uint8_t turnTime) {
   char turnFlag;
   ssize_t n;
@@ -63,11 +73,7 @@ void turnHandler(int sd, uint8_t turnTime) {
 
     memset(guess,0,sizeof(guess));
 
-    n = recv(sd, &turnFlag, sizeof(turnFlag), 0);
-    if (n != sizeof(turnFlag)) {
-      fprintf(stderr,"Read Error: Turn flag not read properly\n");
-      exit(EXIT_FAILURE);
-    }
+    recieve(sd, &turnFlag, sizeof(turnFlag), "Turn flag");
 
     if(turnFlag == 'Y') {
       //apfprintf(stderr,"Read Error: Guess size not read properly");
@@ -83,7 +89,7 @@ void turnHandler(int sd, uint8_t turnTime) {
       send(sd,&timeoutFlag,sizeof(timeoutFlag),0);
       send(sd,&guessSize,sizeof(guessSize),0);
       send(sd,guess,guessSize,0);
-      recv(sd,&isCorrect,sizeof(isCorrect),0);
+      recieve(sd,&isCorrect,sizeof(isCorrect), "isCorrect");
 
       if(isCorrect == 1){
         printf("Valid word\n");
@@ -101,27 +107,12 @@ void turnHandler(int sd, uint8_t turnTime) {
       //iap
       printf("Please wait for opponent to enter word... \n");
 
-      n = recv(sd,&isCorrect,sizeof(isCorrect),0);
-      if (n != sizeof(isCorrect)) {
-        fprintf(stderr,"Read Error: isCorrect not read properly\n");
-        close(sd);
-        exit(EXIT_FAILURE);
-      }
+      recieve(sd,&isCorrect,sizeof(isCorrect),"isCorrect");
 
       if(isCorrect == 1){
-        n = recv(sd, &guessSize, sizeof(guessSize), 0);
-        if (n != sizeof(guessSize)) {
-          fprintf(stderr,"Read Error: Guess size not read properly\n");
-          close(sd);
-          exit(EXIT_FAILURE);
-        }
+        recieve(sd, &guessSize, sizeof(guessSize), "Guess size");
 
-        n = recv(sd, guess, guessSize, 0);
-        if (n != guessSize) {
-          fprintf(stderr,"Read Error: Guess not read properly\n");
-          close(sd);
-          exit(EXIT_FAILURE);
-        }
+        recieve(sd, guess, guessSize, "Guess");
 
         printf("Opponent entered \"%s\" \n",guess);
 
@@ -137,15 +128,6 @@ void turnHandler(int sd, uint8_t turnTime) {
 void betterRead(int sd, void* buf, size_t len, char* error) {
   ssize_t n;
   n = read(sd, buf, len);
-  if (n != len) {
-    fprintf(stderr,"Read Error: %s Score not read properly\n", error);
-    exit(EXIT_FAILURE);
-  }
-}
-
-void recieve(int sd, void* buf, size_t len, int flags, char* error) {
-  ssize_t n;
-  n = recv(sd, buf, len, flags);
   if (n != len) {
     fprintf(stderr,"Read Error: %s Score not read properly\n", error);
     exit(EXIT_FAILURE);
