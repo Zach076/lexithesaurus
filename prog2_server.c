@@ -262,7 +262,7 @@ void populateTrie(char* dictionaryPath) {
 
   fp = fopen(dictionaryPath, "r");
   while(fgets(fileBuffer,1000,fp)) {
-    fileBuffer[strlen(fileBuffer)-2] = '\0';
+    fileBuffer[strlen(fileBuffer)-1] = '\0';
     insert(dictionary, fileBuffer);
   }
 }
