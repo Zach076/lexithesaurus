@@ -16,7 +16,7 @@
 #define TRUE 1
 #define FALSE 0
 int visits = 0; /* counts client connections */
-Trie* dictionary;
+struct TrieNode *dictionary;
 
 /*------------------------------------------------------------------------
 *  Program: demo_server
@@ -103,7 +103,7 @@ void turnHandler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
   ssize_t n;
   uint8_t wordlength;
   char guessbuffer[MAXWORDSIZE];
-  Trie* guessedWords = trie_new();
+  struct TrieNode *guessedWords = getNode();
   uint8_t validguess = TRUE;
   uint8_t timeoutFlag = FALSE;
 
@@ -142,7 +142,7 @@ void turnHandler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
       exit(EXIT_FAILURE);
     }
 
-    if(trie_lookup(dictionary,guessbuffer) == TRIE_NULL){
+    if(!search(dictionary,guessbuffer)){
       //not valid word
       //round over logic
       validguess = FALSE;
@@ -157,8 +157,8 @@ void turnHandler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
       }
     }
     // T.3.1 check if the word is in the trie already
-    else if(trie_lookup(guessedWords, guessbuffer) == TRIE_NULL){
-      trie_insert(guessedWords,guessbuffer,(TrieValue)1);
+    else if(!search(guessedWords, guessbuffer)){
+      insert(guessedWords,guessbuffer);
 
       if(checkGuess(guessbuffer,board)){
         //guess is valid
@@ -263,9 +263,7 @@ void populateTrie(char* dictionaryPath) {
   fp = fopen(dictionaryPath, "r");
   while(fgets(fileBuffer,1000,fp)) {
     fileBuffer[strlen(fileBuffer)-2] = '\0';
-    if(!trie_insert(dictionary, fileBuffer, (TrieValue)value)) {
-      fprintf(stderr,"trie_insert didn't insert correctly \n");
-    }
+    insert(dictionary, fileBuffer);
   }
 }
 
@@ -286,7 +284,7 @@ int main(int argc, char **argv) {
   char* dictionaryPath;
   port = atoi(argv[1]); /* convert argument to binary */
 
-  dictionary = trie_new();
+  dictionary = getNode();
 
 
   if( argc != 5 ) {
