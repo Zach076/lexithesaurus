@@ -1,9 +1,10 @@
 // C implementation of search and insert operations
 // on Trie
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
+
 
 #define ARRAY_SIZE(a) sizeof(a)/sizeof(a[0])
 
@@ -33,7 +34,7 @@ struct TrieNode *getNode(void) {
 		int i;
 
 		pNode->isEndOfWord = false;
-		
+
 		for (i = 0; i < ALPHABET_SIZE; i++){
 			pNode->children[i] = NULL;
 		}

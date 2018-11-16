@@ -257,8 +257,6 @@ void populateTrie(char* dictionaryPath) {
   FILE *fp;
   char fileBuffer[1000];
   memset(fileBuffer,0,sizeof(fileBuffer));
-  int secretVal = 1;
-  int* value = &secretVal;
 
   fp = fopen(dictionaryPath, "r");
   while(fgets(fileBuffer,1000,fp)) {
