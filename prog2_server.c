@@ -47,8 +47,6 @@ void betterSend(int sd, void* buf, size_t len, int sd2) {
         close(sd);
         close(sd2);
         exit(EXIT_FAILURE);
-      } else {
-        //sleep(1);
       }
     }
   }
@@ -137,61 +135,46 @@ void turnHandler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
     betterSend(ap,&yourTurn,sizeof(yourTurn),iap);
     betterSend(iap,&notYourTurn,sizeof(notYourTurn), ap);
 
-
     //recieve timeout
     recieve(ap,&timeoutFlag,sizeof(timeoutFlag),"timeoutFlag", iap);
 
     // recieve players guess
     recieve(ap,&wordlength,sizeof(wordlength),"wordlength", iap);
-
     recieve(ap,guessbuffer,wordlength,"Word", iap);
 
-    if(!search(dictionary,guessbuffer)){
-      //not valid word
-      //round over logic
-      validguess = FALSE;
-      betterSend(ap,&validguess,sizeof(validguess), iap);
-      betterSend(iap,&validguess,sizeof(validguess), ap);
-
-      isRoundOver = TRUE;
-      if(ap == p1) {
-        (*p2Score)++;
-      } else {
-        (*p1Score)++;
-      }
-    }
-    // T.3.1 check if the word is in the trie already
-    else if(!search(guessedWords, guessbuffer)){
-        //printf("the word is not in the guessedtrie.\n");
+    // check if the guess is in the dictionary and
+    // if the guess has already been made and
+    //if
+    if(search(dictionary,guessbuffer) && !search(guessedWords, guessbuffer) && checkGuess(guessbuffer,board)){
+      //put word into the guessed words trie
       insert(guessedWords,guessbuffer);
 
-      if(checkGuess(guessbuffer,board)){
-        //guess is valid
-        betterSend(ap,&validguess,sizeof(validguess),iap);
-        betterSend(iap,&validguess,sizeof(validguess),ap);
-        //send length to inactive player
-        betterSend(iap,&wordlength,sizeof(wordlength),ap);
-        //send the guessed word
-        betterSend(iap,guessbuffer,sizeof(guessbuffer),ap);
-      } else{
-        //round over
-        validguess = FALSE;
-        betterSend(ap,&validguess,sizeof(validguess),iap);
-        betterSend(iap,&validguess,sizeof(validguess),ap);
 
-        isRoundOver = TRUE;
-        if(ap == p1) {
-          (*p2Score)++;
-        } else {
-          (*p1Score)++;
-        }
+      //guess is valid, send to players
+      betterSend(ap,&validguess,sizeof(validguess),iap);
+      betterSend(iap,&validguess,sizeof(validguess),ap);
+      //send length to inactive player
+      betterSend(iap,&wordlength,sizeof(wordlength),ap);
+      //send the guessed word
+      betterSend(iap,guessbuffer,sizeof(guessbuffer),ap);
+
+      //changing active player
+      if(ap == p1) {
+        ap = p2;
+        iap = p1;
+      } else {
+        ap = p1;
+        iap = p2;
       }
-    } else{
-      //round over
+
+    }
+    else{
+      //not valid, send to players
       validguess = FALSE;
       betterSend(ap,&validguess,sizeof(validguess),iap);
       betterSend(iap,&validguess,sizeof(validguess),ap);
 
+      //increment iap score
       isRoundOver = TRUE;
       if(ap == p1) {
         (*p2Score)++;
@@ -200,54 +183,49 @@ void turnHandler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
       }
     }
 
-    //changing active player
-    if(ap == p1) {
-      ap = p2;
-      iap = p1;
-    } else {
-      ap = p1;
-      iap = p2;
-    }
+
   }
 }
 
 //main game function
 //plays game until win or loss calling turnHandler for each round
-void play_game(uint8_t boardSize, uint8_t turnTime, int sd2, int sd3) {
+void playGame(uint8_t boardSize, uint8_t turnTime, int sd2, int sd3) {
 
   char board[boardSize+1];
-
-  char boardbuffer[MAXWORDSIZE+1];
   char guess; //guess recieved from server
   int isCorrect = 0; //flag for if the guess is correct
   int i; //used in for loop
   uint8_t roundNum = 1;
   uint8_t player1Score = 0;
   uint8_t player2Score = 0;
-  int done = FALSE;
+  int done = FALSE; //flag to keep game in while loop
 
+  //null terminate the board
   memset(board,0,sizeof(board));
 
+  //while the game is playing
   while(!done) {
+    //if the game is now over
     if(player1Score == 3 || player2Score == 3) {
       done = TRUE;
     }
-    //R.1
+    //R.1 (send scores to both players)
     betterSend(sd2,&player1Score,sizeof(player1Score),sd3);
     betterSend(sd3,&player1Score,sizeof(player1Score),sd2);
     betterSend(sd2,&player2Score,sizeof(player2Score),sd3);
     betterSend(sd3,&player2Score,sizeof(player2Score),sd2);
-    //R.2
+    //R.2 (send round number to both players)
     betterSend(sd2,&roundNum,sizeof(roundNum),sd3);
     betterSend(sd3,&roundNum,sizeof(roundNum),sd2);
-    //R.3
+    //R.3 (make the board for the current round)
     makeBoard(board, boardSize);
-    //R.4
+    //R.4 (send the board to both players)
     betterSend(sd2,&board,(size_t)boardSize,sd3);
     betterSend(sd3,&board,(size_t)boardSize,sd2);
 
+    //if we're still playing
     if(!done) {
-      //R.5+R.6
+      //R.5+R.6 (decide who starts the round, call turnHandler)
       if(roundNum%2 == 0){
         turnHandler(sd3,sd2, board, &player2Score, &player1Score);
       } else{
@@ -264,8 +242,10 @@ void play_game(uint8_t boardSize, uint8_t turnTime, int sd2, int sd3) {
 void populateTrie(char* dictionaryPath) {
   FILE *fp;
   char fileBuffer[1000];
+  //fill buffer with null terminators
   memset(fileBuffer,0,sizeof(fileBuffer));
 
+  //open file and read line by line, insert into trie
   fp = fopen(dictionaryPath, "r");
   while(fgets(fileBuffer,1000,fp)) {
     fileBuffer[strlen(fileBuffer)-1] = '\0';
@@ -357,10 +337,11 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   }
   pid_t pid; //process id of the child processes.
-  /* Main server loop - accept and handle requests */
 
+  //fill dictionary
   populateTrie(dictionaryPath);
 
+  /* Main server loop - accept and handle requests */
   while (1) {
     alen = sizeof(cad);
     if ((sd2 = accept(sd, (struct sockaddr *)&cad, (socklen_t*)&alen)) < 0) {
@@ -368,6 +349,7 @@ int main(int argc, char **argv) {
       exit(EXIT_FAILURE);
     }
 
+    //send starting game info to player 1
     send(sd2,&player1,sizeof(player1),0);
     send(sd2,&boardSize,sizeof(boardSize),0);
     send(sd2,&turnTime,sizeof(turnTime),0);
@@ -377,6 +359,7 @@ int main(int argc, char **argv) {
       exit(EXIT_FAILURE);
     }
 
+    //send starting game info to player 2
     betterSend(sd3,&player2,sizeof(player2),sd2);
     betterSend(sd3,&boardSize,sizeof(boardSize),sd2);
     betterSend(sd3,&turnTime,sizeof(turnTime),sd2);
@@ -390,7 +373,7 @@ int main(int argc, char **argv) {
     else if (pid == 0) {
 
       //play Lexithesaurus
-      play_game(boardSize, turnTime,sd2,sd3);
+      playGame(boardSize, turnTime,sd2,sd3);
 
       //at end of game close the socket and exit
       close(sd2);
