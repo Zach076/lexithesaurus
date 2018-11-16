@@ -56,7 +56,7 @@ void turnHandler(int sd, uint8_t turnTime) {
   uint8_t guessSize;
   char guess[MAXWORDSIZE];
   uint8_t isCorrect;
-  uint8_t broken = FALSE;
+  uint8_t timeoutFlag = FALSE;
   int done = FALSE;
 
   while(!done) {
@@ -74,20 +74,20 @@ void turnHandler(int sd, uint8_t turnTime) {
       fprintf(stderr, "Your turn, enter a word: ");
       //fgets(guess,MAXWORDSIZE,stdin);
       if (!reader(guess, turnTime)) {
-        broken = TRUE;
-        send(sd,&broken,sizeof(broken),0);
+        timeoutFlag = TRUE;
+        send(sd,&timeoutFlag,sizeof(timeoutFlag),0);
       }
       guess[strlen(guess)-1]=0;
 
       guessSize = (uint8_t)strlen(guess);
-      send(sd,&broken,sizeof(broken),0);
+      send(sd,&timeoutFlag,sizeof(timeoutFlag),0);
       send(sd,&guessSize,sizeof(guessSize),0);
       send(sd,guess,guessSize,0);
       recv(sd,&isCorrect,sizeof(isCorrect),0);
 
       if(isCorrect == 1){
         printf("Valid word\n");
-      } else if(broken){
+      } else if(timeoutFlag){
         printf("\nTimed out\n");
 
         done = TRUE;
@@ -101,18 +101,25 @@ void turnHandler(int sd, uint8_t turnTime) {
       //iap
       printf("Please wait for opponent to enter word... \n");
 
-      recv(sd,&isCorrect,sizeof(isCorrect),0);
+      n = recv(sd,&isCorrect,sizeof(isCorrect),0);
+      if (n != sizeof(isCorrect)) {
+        fprintf(stderr,"Read Error: isCorrect not read properly\n");
+        close(sd);
+        exit(EXIT_FAILURE);
+      }
 
       if(isCorrect == 1){
         n = recv(sd, &guessSize, sizeof(guessSize), 0);
         if (n != sizeof(guessSize)) {
-          fprintf(stderr,"Read Error: Guess size not read properly");
+          fprintf(stderr,"Read Error: Guess size not read properly\n");
+          close(sd);
           exit(EXIT_FAILURE);
         }
 
         n = recv(sd, guess, guessSize, 0);
         if (n != guessSize) {
-          fprintf(stderr,"Read Error: Guess not read properly");
+          fprintf(stderr,"Read Error: Guess not read properly\n");
+          close(sd);
           exit(EXIT_FAILURE);
         }
 

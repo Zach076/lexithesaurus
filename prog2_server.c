@@ -105,7 +105,7 @@ void turnHandler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
   char guessbuffer[MAXWORDSIZE];
   Trie* guessedWords = trie_new();
   uint8_t validguess = TRUE;
-  uint8_t broken = FALSE;
+  uint8_t timeoutFlag = FALSE;
 
   memset(guessbuffer,0,sizeof(guessbuffer));
   int ap = p1;
@@ -117,9 +117,11 @@ void turnHandler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
     send(iap,&notYourTurn,sizeof(notYourTurn),0);
 
     //recieve timeout
-    n = recv(ap,&broken,sizeof(broken),0);
-    if(n != sizeof(broken)){
-      fprintf(stderr,"recv error: broken not read properly\n");
+    n = recv(ap,&timeoutFlag,sizeof(timeoutFlag),0);
+    if(n != sizeof(timeoutFlag)){
+      fprintf(stderr,"recv error: timeoutFlag not read properly\n");
+      close(p1);
+      close(p2);
       exit(EXIT_FAILURE);
     }
 
@@ -127,12 +129,16 @@ void turnHandler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
     n = recv(ap,&wordlength,sizeof(wordlength),0);
     if(n != sizeof(wordlength)){
       fprintf(stderr,"recv error: wordlength not read properly\n");
+      close(p1);
+      close(p2);
       exit(EXIT_FAILURE);
     }
 
     n = recv(ap,guessbuffer,wordlength,0);
     if(n != wordlength){
       fprintf(stderr,"recv error: word not read properly\n");
+      close(p1);
+      close(p2);
       exit(EXIT_FAILURE);
     }
 
