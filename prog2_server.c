@@ -47,7 +47,7 @@ void betterSend(int sd, void* buf, size_t len, int sd2) {
         close(sd2);
         exit(EXIT_FAILURE);
       } else {
-        sleep(1);
+        //sleep(1);
       }
     }
   }
