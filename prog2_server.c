@@ -80,8 +80,11 @@ void makeBoard(char* board, uint8_t boardSize) {
 
 int checkGuess(char* guess,char* board){
   int letterCount[26];
+  memset(letterCount,0,sizeof(letterCount));
   int i;
   int valid = TRUE;
+    //board is correctly here
+    //printf("%s\n",board);
 
   for(i=0;i <strlen(board);i++){
     letterCount[board[i] - 97]++;
@@ -158,6 +161,7 @@ void turnHandler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
     }
     // T.3.1 check if the word is in the trie already
     else if(!search(guessedWords, guessbuffer)){
+        //printf("the word is not in the guessedtrie.\n");
       insert(guessedWords,guessbuffer);
 
       if(checkGuess(guessbuffer,board)){

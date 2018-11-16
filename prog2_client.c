@@ -71,7 +71,7 @@ void turnHandler(int sd, uint8_t turnTime) {
 
     if(turnFlag == 'Y') {
       //apfprintf(stderr,"Read Error: Guess size not read properly");
-      fprintf(stderr, "Your turn, enter a word: ");
+      fprintf(stderr,"Your turn, enter a word: ");
       //fgets(guess,MAXWORDSIZE,stdin);
       if (!reader(guess, turnTime)) {
         timeoutFlag = TRUE;
@@ -277,9 +277,9 @@ int main( int argc, char **argv) {
     exit(EXIT_FAILURE);
   }
   if(playerNum == '1') {
-    fprintf(stderr,"You are Player 1... the game will begin when Player 2 joins...\n");
+    printf("You are Player 1... the game will begin when Player 2 joins...\n");
   } else {
-    fprintf(stderr,"You are Player 2... \n");
+    printf("You are Player 2... \n");
   }
 
   n = read(sd,&boardSize,sizeof(boardSize));
@@ -287,14 +287,14 @@ int main( int argc, char **argv) {
     fprintf(stderr,"Read Error: boardSize not read properly");
     exit(EXIT_FAILURE);
   }
-  fprintf(stderr,"Board size : %d \n",boardSize);
+  printf("Board size : %d \n",boardSize);
 
   n = read(sd,&turnTime,sizeof(turnTime));
   if(n != sizeof(turnTime)){
     fprintf(stderr,"Read Error: turnTime not read properly");
     exit(EXIT_FAILURE);
   }
-  fprintf(stderr,"Seconds per turn : %d \n",turnTime);
+  printf("Seconds per turn : %d \n",turnTime);
 
   /* Game Logic function */
   playGame(sd, playerNum, boardSize, turnTime);
