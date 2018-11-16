@@ -4,12 +4,14 @@
 */
 
 #include "trie.h"
+#include <errno.h>
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+
 
 #define MAXWORDSIZE 255
 #define QLEN 6 /* size of request queue */
@@ -34,12 +36,20 @@ struct TrieNode *dictionary;
 *------------------------------------------------------------------------
 */
 
-void betterRead(int sd, void* buf, size_t len, char* error) {
-  ssize_t n;
-  n = read(sd, buf, len);
-  if (n != len) {
-    fprintf(stderr,"Read Error: %s Score not read properly\n", error);
-    exit(EXIT_FAILURE);
+void betterSend(int sd, void* buf, size_t len, int sd2) {
+  ssize_t n = -1;
+  while(n == -1) {
+    n = send(sd, buf, len, 0);
+    if(n == -1) {
+      if(errno != ENOBUFS && errno != ENOMEM) {
+        n = 0;
+        close(sd);
+        close(sd2);
+        exit(EXIT_FAILURE);
+      } else {
+        sleep(2);
+      }
+    }
   }
 }
 
@@ -118,8 +128,9 @@ void turnHandler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
 
   while(!isRoundOver){
     //T.1
-    send(ap,&yourTurn,sizeof(yourTurn),0);
-    send(iap,&notYourTurn,sizeof(notYourTurn),0);
+    betterSend(ap,&yourTurn,sizeof(yourTurn),iap);
+    betterSend(iap,&notYourTurn,sizeof(notYourTurn), ap);
+
 
     //recieve timeout
     recieve(ap,&timeoutFlag,sizeof(timeoutFlag),"timeoutFlag", iap);
@@ -133,8 +144,8 @@ void turnHandler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
       //not valid word
       //round over logic
       validguess = FALSE;
-      send(ap,&validguess,sizeof(validguess),0);
-      send(iap,&validguess,sizeof(validguess),0);
+      betterSend(ap,&validguess,sizeof(validguess), iap);
+      betterSend(iap,&validguess,sizeof(validguess), ap);
 
       isRoundOver = TRUE;
       if(ap == p1) {
@@ -150,17 +161,17 @@ void turnHandler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
 
       if(checkGuess(guessbuffer,board)){
         //guess is valid
-        send(ap,&validguess,sizeof(validguess),0);
-        send(iap,&validguess,sizeof(validguess),0);
+        betterSend(ap,&validguess,sizeof(validguess),iap);
+        betterSend(iap,&validguess,sizeof(validguess),ap);
         //send length to inactive player
-        send(iap,&wordlength,sizeof(wordlength),0);
+        betterSend(iap,&wordlength,sizeof(wordlength),ap);
         //send the guessed word
-        send(iap,guessbuffer,sizeof(guessbuffer),0);
+        betterSend(iap,guessbuffer,sizeof(guessbuffer),ap);
       } else{
         //round over
         validguess = FALSE;
-        send(ap,&validguess,sizeof(validguess),0);
-        send(iap,&validguess,sizeof(validguess),0);
+        betterSend(ap,&validguess,sizeof(validguess),iap);
+        betterSend(iap,&validguess,sizeof(validguess),ap);
 
         isRoundOver = TRUE;
         if(ap == p1) {
@@ -172,8 +183,8 @@ void turnHandler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
     } else{
       //round over
       validguess = FALSE;
-      send(ap,&validguess,sizeof(validguess),0);
-      send(iap,&validguess,sizeof(validguess),0);
+      betterSend(ap,&validguess,sizeof(validguess),iap);
+      betterSend(iap,&validguess,sizeof(validguess),ap);
 
       isRoundOver = TRUE;
       if(ap == p1) {
@@ -214,18 +225,18 @@ void play_game(uint8_t boardSize, uint8_t turnTime, int sd2, int sd3) {
       done = TRUE;
     }
     //R.1
-    send(sd2,&player1Score,sizeof(player1Score),0);
-    send(sd3,&player1Score,sizeof(player1Score),0);
-    send(sd2,&player2Score,sizeof(player2Score),0);
-    send(sd3,&player2Score,sizeof(player2Score),0);
+    betterSend(sd2,&player1Score,sizeof(player1Score),sd3);
+    betterSend(sd3,&player1Score,sizeof(player1Score),sd2);
+    betterSend(sd2,&player2Score,sizeof(player2Score),sd3);
+    betterSend(sd3,&player2Score,sizeof(player2Score),sd2);
     //R.2
-    send(sd2,&roundNum,sizeof(roundNum),0);
-    send(sd3,&roundNum,sizeof(roundNum),0);
+    betterSend(sd2,&roundNum,sizeof(roundNum),sd3);
+    betterSend(sd3,&roundNum,sizeof(roundNum),sd2);
     //R.3
     makeBoard(board, boardSize);
     //R.4
-    send(sd2,&board,(size_t)boardSize,0);
-    send(sd3,&board,(size_t)boardSize,0);
+    betterSend(sd2,&board,(size_t)boardSize,sd3);
+    betterSend(sd3,&board,(size_t)boardSize,sd2);
 
     if(!done) {
       //R.5+R.6
@@ -356,9 +367,9 @@ int main(int argc, char **argv) {
       exit(EXIT_FAILURE);
     }
 
-    send(sd3,&player2,sizeof(player2),0);
-    send(sd3,&boardSize,sizeof(boardSize),0);
-    send(sd3,&turnTime,sizeof(turnTime),0);
+    betterSend(sd3,&player2,sizeof(player2),sd2);
+    betterSend(sd3,&boardSize,sizeof(boardSize),sd2);
+    betterSend(sd3,&turnTime,sizeof(turnTime),sd2);
 
     // fork here and implement logic
     pid = fork();
