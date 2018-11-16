@@ -78,16 +78,16 @@ void makeBoard(char* board, uint8_t boardSize) {
   }
 }
 
-int checkGuess(char* guess,uint8_t wordlength, char* board, uint8_t boardSize){
+int checkGuess(char* guess,char* board){
   int letterCount[26];
   int i;
   int valid = TRUE;
 
-  for(i=0;i <boardSize;i++){
+  for(i=0;i <strlen(board);i++){
     letterCount[board[i] - 97]++;
   }
 
-  for(i=0;i <wordlength;i++){
+  for(i=0;i <strlen(guess);i++){
     letterCount[guess[i]-97]--;
     if(letterCount[guess[i]-97] ==-1){
       valid = FALSE;
@@ -96,7 +96,7 @@ int checkGuess(char* guess,uint8_t wordlength, char* board, uint8_t boardSize){
   return valid;
 }
 
-void turnHandler(int p1,int p2,char* board,uint8_t boardSize,uint8_t *p1Score,uint8_t* p2Score){
+void turnHandler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
   char yourTurn = 'Y';
   char notYourTurn = 'N';
   int isRoundOver = FALSE;
@@ -154,7 +154,7 @@ void turnHandler(int p1,int p2,char* board,uint8_t boardSize,uint8_t *p1Score,ui
     else if(trie_lookup(guessedWords, guessbuffer) == TRIE_NULL){
       trie_insert(guessedWords,guessbuffer,(TrieValue)1);
 
-      if(checkGuess(guessbuffer, wordlength, board, boardSize)){
+      if(checkGuess(guessbuffer,board)){
         //guess is valid
         send(ap,&validguess,sizeof(validguess),0);
         send(iap,&validguess,sizeof(validguess),0);
@@ -236,9 +236,9 @@ void play_game(uint8_t boardSize, uint8_t turnTime, int sd2, int sd3) {
     if(!done) {
       //R.5+R.6
       if(roundNum%2 == 0){
-        turnHandler(sd3,sd2, board,boardSize, &player2Score, &player1Score);
+        turnHandler(sd3,sd2, board, &player2Score, &player1Score);
       } else{
-        turnHandler(sd2,sd3, board,boardSize, &player1Score, &player2Score);
+        turnHandler(sd2,sd3, board, &player1Score, &player2Score);
       }
       //increment round number
       roundNum++;
