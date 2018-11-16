@@ -150,12 +150,12 @@ void playGame(int sd, char playerNum, uint8_t boardSize, uint8_t turnTime) {
 
   while(!done) {
     //R.1
-    recieve(sd, &player1Score, sizeof(player1Score), 0, "Player1 Score");
-    recieve(sd, &player2Score, sizeof(player2Score), 0, "Player2 Score");
+    recieve(sd, &player1Score, sizeof(player1Score), "Player1 Score");
+    recieve(sd, &player2Score, sizeof(player2Score), "Player2 Score");
     //R.2
-    recieve(sd, &roundNum, sizeof(roundNum), 0, "Round number");
+    recieve(sd, &roundNum, sizeof(roundNum), "Round number");
     //R.4
-    recieve(sd, board, boardSize, 0, "Board");
+    recieve(sd, board, boardSize, "Board");
 
     if(player1Score < 3 && player2Score < 3) {
       printf("\nRound %d... \n", roundNum);
