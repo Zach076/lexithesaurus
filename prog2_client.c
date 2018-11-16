@@ -3,6 +3,7 @@
 * 31 OCT 2018, Zach Richardson and Mitch Kimball
 */
 
+#include <errno.h>
 #include<netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,6 +31,26 @@
 *
 *------------------------------------------------------------------------
 */
+
+//sends data from buf of size len to sd and if theres a fixable error,
+//try to send again, otherwise exit nicely
+void betterSend(int sd, void* buf, size_t len) {
+  ssize_t n = -1;
+  while(n == -1) {
+    n = send(sd, buf, len, 0);
+    if(n == -1) {
+      if(errno != ENOBUFS && errno != ENOMEM) {
+        close(sd);
+        exit(EXIT_FAILURE);
+      } else {
+        //sleep(1);
+      }
+    }
+  }
+}
+
+//reads from stdin within a certain time frame,
+//returning if the timeout was reached or not
 int reader(char* guess, uint8_t sec) {
   fd_set set;
   struct timeval timeout = {sec,0}; //timeout of 10 secs.
@@ -50,6 +71,8 @@ int reader(char* guess, uint8_t sec) {
   return n;
 }
 
+//recieves data drom a send, storing the data of length len to buf
+//prints error if recieve fails
 void recieve(int sd, void* buf, size_t len, char* error) {
   ssize_t n;
   n = recv(sd, buf, len, MSG_WAITALL);
@@ -60,6 +83,7 @@ void recieve(int sd, void* buf, size_t len, char* error) {
   }
 }
 
+//keeps 2 players in a round of the game until one loses the round
 void turnHandler(int sd, uint8_t turnTime) {
   char turnFlag;
   ssize_t n;
@@ -81,14 +105,14 @@ void turnHandler(int sd, uint8_t turnTime) {
       //fgets(guess,MAXWORDSIZE,stdin);
       if (!reader(guess, turnTime)) {
         timeoutFlag = TRUE;
-        send(sd,&timeoutFlag,sizeof(timeoutFlag),0);
+        betterSend(sd,&timeoutFlag,sizeof(timeoutFlag));
       }
       guess[strlen(guess)-1]=0;
 
       guessSize = (uint8_t)strlen(guess);
-      send(sd,&timeoutFlag,sizeof(timeoutFlag),0);
-      send(sd,&guessSize,sizeof(guessSize),0);
-      send(sd,guess,guessSize,0);
+      betterSend(sd,&timeoutFlag,sizeof(timeoutFlag));
+      betterSend(sd,&guessSize,sizeof(guessSize));
+      betterSend(sd,guess,guessSize);
       recieve(sd,&isCorrect,sizeof(isCorrect), "isCorrect");
 
       if(isCorrect == 1){
@@ -125,15 +149,9 @@ void turnHandler(int sd, uint8_t turnTime) {
   }
 }
 
-void betterRead(int sd, void* buf, size_t len, char* error) {
-  ssize_t n;
-  n = read(sd, buf, len);
-  if (n != len) {
-    fprintf(stderr,"Read Error: %s Score not read properly\n", error);
-    exit(EXIT_FAILURE);
-  }
-}
-
+//main game function
+//keeps 2 players in the game for up to 5 rounds, calling turnHandler for each
+//once a player gets 3 points, the game ends
 void playGame(int sd, char playerNum, uint8_t boardSize, uint8_t turnTime) {
   char guessBuffer[MAXWORDSIZE+1];
   char board[boardSize+1];

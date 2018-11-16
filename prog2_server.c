@@ -36,13 +36,14 @@ struct TrieNode *dictionary;
 *------------------------------------------------------------------------
 */
 
+//sends data from buf of size len to sd and if theres a fixable error,
+//try to send again, otherwise exit nicely
 void betterSend(int sd, void* buf, size_t len, int sd2) {
   ssize_t n = -1;
   while(n == -1) {
     n = send(sd, buf, len, 0);
     if(n == -1) {
       if(errno != ENOBUFS && errno != ENOMEM) {
-        //n = 0;
         close(sd);
         close(sd2);
         exit(EXIT_FAILURE);
@@ -53,6 +54,8 @@ void betterSend(int sd, void* buf, size_t len, int sd2) {
   }
 }
 
+//recieves data drom a send, storing the data of length len to buf
+//prints error if recieve fails
 void recieve(int sd, void* buf, size_t len, char* error, int sd2) {
   ssize_t n;
   n = recv(sd, buf, len, MSG_WAITALL);
@@ -64,6 +67,7 @@ void recieve(int sd, void* buf, size_t len, char* error, int sd2) {
   }
 }
 
+//random board generator
 void makeBoard(char* board, uint8_t boardSize) {
   char vowels[5] = {'a','e','i','o','u'};
   char randChar;
@@ -90,6 +94,7 @@ void makeBoard(char* board, uint8_t boardSize) {
   }
 }
 
+//a quick check to see if the guess is in the board
 int checkGuess(char* guess,char* board){
   int letterCount[26];
   memset(letterCount,0,sizeof(letterCount));
@@ -111,6 +116,7 @@ int checkGuess(char* guess,char* board){
   return valid;
 }
 
+//plays turns in a round according to what turn flag the server sends us
 void turnHandler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
   char yourTurn = 'Y';
   char notYourTurn = 'N';
@@ -205,6 +211,8 @@ void turnHandler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
   }
 }
 
+//main game function
+//plays game until win or loss calling turnHandler for each round
 void play_game(uint8_t boardSize, uint8_t turnTime, int sd2, int sd3) {
 
   char board[boardSize+1];
@@ -252,6 +260,7 @@ void play_game(uint8_t boardSize, uint8_t turnTime, int sd2, int sd3) {
 
 }
 
+//fills a trie from a dictionary file
 void populateTrie(char* dictionaryPath) {
   FILE *fp;
   char fileBuffer[1000];
@@ -264,6 +273,7 @@ void populateTrie(char* dictionaryPath) {
   }
 }
 
+//main function, mostly connection logic
 int main(int argc, char **argv) {
   struct protoent *ptrp; /* pointer to a protocol table entry */
   struct sockaddr_in sad; /* structure to hold server's address */
