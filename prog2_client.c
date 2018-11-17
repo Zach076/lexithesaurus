@@ -48,7 +48,7 @@ void betterSend(int sd, void* buf, size_t len) {
         exit(EXIT_FAILURE);
       }
       //sleep for 2 thenths of a second
-      usleep(300000);
+      usleep(500000);
     }
   }
 }
