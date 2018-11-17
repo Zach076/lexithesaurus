@@ -40,9 +40,13 @@ struct TrieNode *dictionary;
 //try to send again, otherwise exit nicely
 void betterSend(int sd, void* buf, size_t len, int sd2) {
   ssize_t n = -1;
+  //while errors occur
   while(n == -1) {
+    //try to send data
     n = send(sd, buf, len, 0);
+    //if error occured
     if(n == -1) {
+      //if error is not fixable, disconnect both clents, and exit
       if(errno != ENOBUFS && errno != ENOMEM) {
         close(sd);
         close(sd2);
@@ -56,7 +60,9 @@ void betterSend(int sd, void* buf, size_t len, int sd2) {
 //prints error if recieve fails
 void recieve(int sd, void* buf, size_t len, char* error, int sd2) {
   ssize_t n;
+  //recieve data
   n = recv(sd, buf, len, MSG_WAITALL);
+  //if recieved incorrectly print error, disconnect both clients, and exit
   if (n != len) {
     fprintf(stderr,"Read Error: %s Score not read properly\n", error);
     close(sd);
@@ -68,18 +74,22 @@ void recieve(int sd, void* buf, size_t len, char* error, int sd2) {
 //random board generator
 void makeBoard(char* board, uint8_t boardSize) {
   char vowels[5] = {'a','e','i','o','u'};
-  char randChar;
-  int vowel = 0;
+  char randChar; //char to be generated
+  int vowel = 0; //vowel flag
 
-  srand(time(NULL));
+  srand(time(NULL)); //set seed for randomization
+  //for each space in the board
   for (int i = 0; i < boardSize; i++) {
-
+    //if were not at the end or we already have a vowel
     if(i != boardSize-1 || vowel) {
+      //generate a randChar
       randChar = (rand() %(122-97+1))+97;
     } else {
+      //generate a vowel
       randChar = vowels[rand()%(4-0+1)];
     }
 
+    //check if we just added a vowel and update the vowel flag
     if(randChar == 'a' ||
        randChar == 'e' ||
        randChar == 'i' ||
@@ -88,27 +98,28 @@ void makeBoard(char* board, uint8_t boardSize) {
       vowel = 1;
     }
 
+    //put the char in the board
     board[i] = randChar;
   }
 }
 
 //a quick check to see if the guess is in the board
 int checkGuess(char* guess,char* board){
-  int letterCount[26];
-  memset(letterCount,0,sizeof(letterCount));
-  int i;
-  int valid = TRUE;
-    //board is correctly here
-    //printf("%s\n",board);
+  int letterCount[26]; //make an array for the size of the alphabet
+  memset(letterCount,0,sizeof(letterCount)); //fill alphabet with zeroes
+  int i; //used in for loops
+  int valid = TRUE; //valid guess flag, to be returned
 
+  //for each char in the board, add 1 to the letter position in the array
   for(i=0;i <strlen(board);i++){
     letterCount[board[i] - 97]++;
   }
 
+  //for each char in the guess, decrement from the letterCount
   for(i=0;i <strlen(guess);i++){
     letterCount[guess[i]-97]--;
-    if(letterCount[guess[i]-97] ==-1){
-      valid = FALSE;
+    if(letterCount[guess[i]-97] ==-1){ //if char isnt in board
+      valid = FALSE; //return false
     }
   }
   return valid;
@@ -144,11 +155,10 @@ void turnHandler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
 
     // check if the guess is in the dictionary and
     // if the guess has already been made and
-    //if
+    // if the guess was made from the board
     if(search(dictionary,guessbuffer) && !search(guessedWords, guessbuffer) && checkGuess(guessbuffer,board)){
       //put word into the guessed words trie
       insert(guessedWords,guessbuffer);
-
 
       //guess is valid, send to players
       betterSend(ap,&validguess,sizeof(validguess),iap);
@@ -158,17 +168,7 @@ void turnHandler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
       //send the guessed word
       betterSend(iap,guessbuffer,sizeof(guessbuffer),ap);
 
-      //changing active player
-      if(ap == p1) {
-        ap = p2;
-        iap = p1;
-      } else {
-        ap = p1;
-        iap = p2;
-      }
-
-    }
-    else{
+    } else{
       //not valid, send to players
       validguess = FALSE;
       betterSend(ap,&validguess,sizeof(validguess),iap);
@@ -183,6 +183,14 @@ void turnHandler(int p1,int p2,char* board,uint8_t *p1Score,uint8_t* p2Score){
       }
     }
 
+    //changing active player
+    if(ap == p1) {
+      ap = p2;
+      iap = p1;
+    } else {
+      ap = p1;
+      iap = p2;
+    }
 
   }
 }
